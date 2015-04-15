@@ -1,17 +1,55 @@
 include_directories(${CMAKE_BINARY_DIR})
 
 
-####################### Build type ########################
+##################### Scanning files #######################
+
+file(GLOB_RECURSE SOURCE_FILES src/*.cpp)
+source_group("Source Files" FILES ${SOURCE_FILES})
+
+file(GLOB_RECURSE HEADER_FILES src/*.h)
+source_group("Headers" FILES ${HEADER_FILES})
+
+file(GLOB_RECURSE UI_FILES src/*.ui)
+source_group("UI Files" FILES ${UI_FILES})
+
+file(GLOB_RECURSE TS_FILES i18n/*.ts)
+source_group("Translation" FILES ${TS_FILES})
+
+file(GLOB_RECURSE QRC ${RESOURCES_DIR}/*.qrc)
+source_group("Resources" FILES ${QRC})
+
+
+######################## Build type ########################
 
 if(QT)
+
     if(UNIX)
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/Qt/5.4/gcc_64/lib/cmake")
     endif(UNIX)
+
     find_package(Qt5Widgets REQUIRED)
     find_package(Qt5LinguistTools)
+
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
     set(CMAKE_AUTOMOC ON)
     qt5_wrap_ui(UI_HEADERS ${UI_FILES})
+    
+    if(Qt5LinguistTools_FOUND)
+        message(STATUS "To update translations run \"make update_translations\"")     
+        set_property(SOURCE ${TS_FILES} PROPERTY OUTPUT_LOCATION ${CMAKE_BINARY_DIR}/i18n)
+        add_custom_target(update_translations
+                          COMMAND lupdate ${PROJECT_SOURCE_DIR}/src/ -ts ${TS_FILES}
+                          COMMENT "Run lupdate to update translations files")
+        add_custom_target(update_translations_clean
+                          COMMAND lupdate ${PROJECT_SOURCE_DIR}/src/ -ts ${TS_FILES} -no-obsolete
+                          COMMENT "Run lupdate with \"-no-obsolete\" key to update and clean translations files")
+        qt5_add_translation(QM_FILES ${TS_FILES})
+    else()
+        message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
+    endif()
+
+    qt5_add_resources(QRC_ADDED ${QRC})
+
 endif(QT)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -103,13 +141,12 @@ if(GIT)
 ##################### File versions ########################
 
     file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
-    file(GLOB S_FILES ${PROJECT_SOURCE_DIR}/src/*)
+    file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
     foreach(FILE ${S_FILES})
-        get_filename_component(FILE ${FILE} NAME)
-        execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci src/${FILE} OUTPUT_VARIABLE F_DATE)
+        execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
         if(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
             string(STRIP ${F_DATE} F_DATE)
-            execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h src/${FILE} OUTPUT_VARIABLE F_VERSION)
+            execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
             string(STRIP ${F_VERSION} F_VERSION)
             file(APPEND ${CMAKE_BINARY_DIR}/sources.h
                  "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
