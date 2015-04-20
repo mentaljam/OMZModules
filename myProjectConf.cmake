@@ -32,10 +32,9 @@ if(QT)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
     set(CMAKE_AUTOMOC ON)
-    qt5_wrap_ui(UI_HEADERS ${UI_FILES})
     
     if(Qt5LinguistTools_FOUND)
-        message(STATUS "To update translations run \"make update_translations\"")     
+        message(STATUS "To update translations run \"make update_translations\"")
         set_property(SOURCE ${TS_FILES} PROPERTY OUTPUT_LOCATION ${CMAKE_BINARY_DIR}/i18n)
         add_custom_target(update_translations
                           COMMAND lupdate ${PROJECT_SOURCE_DIR}/src/ -ts ${TS_FILES}
@@ -47,8 +46,6 @@ if(QT)
     else()
         message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
     endif()
-
-    qt5_add_resources(QRC_ADDED ${QRC})
 
 endif(QT)
 
@@ -90,9 +87,10 @@ endif(IF64)
 
 if(CMAKE_COMPILER_IS_GNUCC AND EXISTS ${DLL_ARCH})
     message(STATUS "Unpacking precompiled dlls")
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/runtime)
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${DLL_ARCH}
-                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-    file(GLOB DLLS ${CMAKE_BINARY_DIR}/*.dll)
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/runtime)
+    file(GLOB DLLS ${CMAKE_BINARY_DIR}/runtime/*.dll)
 endif(CMAKE_COMPILER_IS_GNUCC AND EXISTS ${DLL_ARCH})
 
 
