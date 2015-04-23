@@ -1,4 +1,14 @@
+######################### General ##########################
+
 include_directories(${CMAKE_BINARY_DIR})
+
+if(NOT ARCH)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ARCH 64)
+    else()
+        set(ARCH 32)
+    endif()
+endif()
 
 
 ##################### Scanning files #######################
@@ -67,21 +77,21 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
 ################ Architecture and compiler #################
 
-if(IF64)
+if(ARCH EQUAL 64)
     message(STATUS "Configuring 64 bit version")
     if(CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -m64")
         set(DLL_ARCH ${THIRD_PARTY_DIR}/dll_gcc_x64.tar.gz)
     endif(CMAKE_COMPILER_IS_GNUCC)
     set(COMPILED_ARCH "amd64")
-else(IF64)
+else(ARCH EQUAL 32)
     message(STATUS "Configuring 32 bit version")
     if(CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -m32")
         set(DLL_ARCH ${THIRD_PARTY_DIR}/dll_gcc_x32.tar.gz)
     endif(CMAKE_COMPILER_IS_GNUCC)
     set(COMPILED_ARCH "i386")
-endif(IF64)
+endif()
 
 ###################### Unpacking dlls ######################
 
