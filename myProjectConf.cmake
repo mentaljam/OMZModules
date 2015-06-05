@@ -42,6 +42,7 @@ if(QT)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
     set(CMAKE_AUTOMOC ON)
+    qt5_wrap_ui(UI_HEADERS ${UI_FILES})
     
     if(Qt5LinguistTools_FOUND)
         message(STATUS "To update translations run \"make update_translations\"")
@@ -57,7 +58,7 @@ if(QT)
         message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
     endif()
 
-endif(QT)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(QT)
@@ -65,14 +66,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_definitions(-DQT_NO_DEBUG_OUTPUT)
         add_definitions(-DQT_NO_WARNING)
         add_definitions(-DQT_NO_WARNING_OUTPUT)
-    endif(QT)
+    endif()
     if(CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
         if(WIN32 AND QT)
             set(QT_CXX_FLAGS "-mwindows")
-        endif(WIN32 AND QT)
-    endif(CMAKE_COMPILER_IS_GNUCC)
-endif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        endif()
+    endif()
+endif()
 
 
 ################ Architecture and compiler #################
@@ -101,7 +102,7 @@ if(CMAKE_COMPILER_IS_GNUCC AND EXISTS ${DLL_ARCH})
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${DLL_ARCH}
                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/runtime)
     file(GLOB DLLS ${CMAKE_BINARY_DIR}/runtime/*.dll)
-endif(CMAKE_COMPILER_IS_GNUCC AND EXISTS ${DLL_ARCH})
+endif()
 
 
 ######################## Versions ##########################
@@ -115,7 +116,7 @@ set(V_DATE "unknown_build")
 if(NOT GIT)
     unset(GIT CACHE)
     find_program(GIT git)
-endif(NOT GIT)
+endif()
 if(GIT)
 
     execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} describe --tags --always
@@ -137,14 +138,14 @@ if(GIT)
                 set(V_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
                 if(VERSION_STATUS)
                     set(V_VERSION "${V_VERSION}~${VERSION_STATUS}")
-                endif(VERSION_STATUS)
+                endif()
                 if(${VERSION_LENGTH} EQUAL 4)
                     list(GET VERSION 2 CPACK_PACKAGE_VERSION_PATCH)
                     set(V_VERSION "${V_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
-                endif(${VERSION_LENGTH} EQUAL 4)
-            endif(${VERSION_LENGTH} EQUAL 1)
-        endif(NOT ${VERSION_LENGTH} EQUAL 0)
-    endif(VERSION)
+                endif()
+            endif()
+        endif()
+    endif()
 
 ##################### File versions ########################
 
@@ -158,12 +159,12 @@ if(GIT)
             string(STRIP ${F_VERSION} F_VERSION)
             file(APPEND ${CMAKE_BINARY_DIR}/sources.h
                  "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
-        endif(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
+        endif()
     endforeach()
 
 else(GIT)
     message(AUTHOR_WARNING "Git not found - version can not be defined")
-endif(GIT)
+endif()
 
 file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
      "#define VERSION \"${V_VERSION}\"\n#define V_DATE \"${V_DATE}\"\n#define V_ARCH \"${COMPILED_ARCH}\"")
@@ -216,4 +217,4 @@ elseif(UNIX)
     set(CPACK_DEBIAN_PACKAGE_VERSION ${V_VERSION})
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${COMPILED_ARCH})
-endif(WIN32)
+endif()
