@@ -11,24 +11,6 @@ if(NOT ARCH)
 endif()
 
 
-##################### Scanning files #######################
-
-file(GLOB_RECURSE SOURCE_FILES src/*.cpp)
-source_group("Source Files" FILES ${SOURCE_FILES})
-
-file(GLOB_RECURSE HEADER_FILES src/*.h)
-source_group("Headers" FILES ${HEADER_FILES})
-
-file(GLOB_RECURSE UI_FILES src/*.ui)
-source_group("UI Files" FILES ${UI_FILES})
-
-file(GLOB_RECURSE TS_FILES i18n/*.ts)
-source_group("Translation" FILES ${TS_FILES})
-
-file(GLOB_RECURSE QRC ${RESOURCES_DIR}/*.qrc)
-source_group("Resources" FILES ${QRC})
-
-
 ######################## Build type ########################
 
 if(QT)
@@ -42,19 +24,8 @@ if(QT)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
     set(CMAKE_AUTOMOC ON)
-    qt5_wrap_ui(UI_HEADERS ${UI_FILES})
     
-    if(Qt5LinguistTools_FOUND)
-        message(STATUS "To update translations run \"make update_translations\"")
-        set_property(SOURCE ${TS_FILES} PROPERTY OUTPUT_LOCATION ${CMAKE_BINARY_DIR}/i18n)
-        add_custom_target(update_translations
-                          COMMAND lupdate ${PROJECT_SOURCE_DIR}/src/ -ts ${TS_FILES}
-                          COMMENT "Run lupdate to update translations files")
-        add_custom_target(update_translations_clean
-                          COMMAND lupdate ${PROJECT_SOURCE_DIR}/src/ -ts ${TS_FILES} -no-obsolete
-                          COMMENT "Run lupdate with \"-no-obsolete\" key to update and clean translations files")
-        qt5_add_translation(QM_FILES ${TS_FILES})
-    else()
+    if(NOT Qt5LinguistTools_FOUND)
         message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
     endif()
 
