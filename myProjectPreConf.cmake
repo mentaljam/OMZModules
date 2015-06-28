@@ -1,5 +1,9 @@
 ######################### General ##########################
 
+if(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+endif(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
+
 include_directories(${CMAKE_BINARY_DIR})
 
 if(NOT ARCH)
@@ -137,8 +141,12 @@ else(GIT)
     message(AUTHOR_WARNING "Git not found - version can not be defined")
 endif()
 
+string(TOUPPER ${CMAKE_PROJECT_NAME} NAME_UP)
 file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
-     "#define VERSION \"${V_VERSION}\"\n#define V_DATE \"${V_DATE}\"\n#define V_ARCH \"${COMPILED_ARCH}\"")
+     "#ifndef ${NAME_UP}_VERSION_H\n#define ${NAME_UP}_VERSION_H\n\n"
+     "#define VERSION_${NAME_UP} \"${V_VERSION}\"\n"
+     "#define VER_DATE_${NAME_UP} \"${V_DATE}\"\n"
+     "#define VER_ARCH_${NAME_UP} \"${COMPILED_ARCH}\"\n\n")
 
 
 ####################### CPack options ######################
