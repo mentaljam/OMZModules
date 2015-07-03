@@ -43,7 +43,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_definitions(-DQT_NO_WARNING_OUTPUT)
     endif()
     if(CMAKE_COMPILER_IS_GNUCC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
+        set(GCC_FLAGS "${GCC_FLAGS} -s")
         if(WIN32 AND QT)
             set(QT_CXX_FLAGS "-mwindows")
         endif()
@@ -142,6 +142,7 @@ else(GIT)
 endif()
 
 string(TOUPPER ${CMAKE_PROJECT_NAME} NAME_UP)
+string(REGEX REPLACE "[- ]" "_" NAME_UP ${NAME_UP})
 file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
      "#ifndef ${NAME_UP}_VERSION_H\n#define ${NAME_UP}_VERSION_H\n\n"
      "#define VERSION_${NAME_UP} \"${V_VERSION}\"\n"
