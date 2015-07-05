@@ -5,7 +5,8 @@ set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FIL
 
 ########################### CPack ##########################
 
-include(cpack)
+include(CPack)
+include(CPackComponent)
 
 
 ######################### Versions #########################
