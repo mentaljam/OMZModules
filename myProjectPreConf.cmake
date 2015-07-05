@@ -28,6 +28,8 @@ if(QT)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
     set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTORCC ON)
     
     if(NOT Qt5LinguistTools_FOUND)
         message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
