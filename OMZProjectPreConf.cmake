@@ -14,6 +14,10 @@ if(NOT ARCH)
     endif()
 endif()
 
+if(WIN32)
+    set(CMAKE_SYSTEM_NAME "win${ARCH}")
+endif()
+
 
 ######################## Build type ########################
 
@@ -179,6 +183,8 @@ foreach(FILE ${LICENSE_FILES})
 endforeach()
 file(APPEND ${CPACK_RESOURCE_FILE_LICENSE} "\n\n${FULL_LICENSE_TEXT}")
 
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_COMPONENT_GROUP_MSUPROJ_DISPLAY_NAME ${PROJECT_NAME})
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${V_VERSION}")
 if(WIN32)
     message(STATUS "CPack generator type is set to \"WIX\", for building package use \"make package\"")
