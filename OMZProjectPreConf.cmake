@@ -78,16 +78,6 @@ else(ARCH EQUAL 32)
     set(COMPILED_ARCH "i386")
 endif()
 
-###################### Unpacking dlls ######################
-
-if(CMAKE_COMPILER_IS_GNUCC AND EXISTS ${DLL_ARCH})
-    message(STATUS "Unpacking precompiled dlls")
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/runtime)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${DLL_ARCH}
-                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/runtime)
-    file(GLOB DLLS ${CMAKE_BINARY_DIR}/runtime/*.dll)
-endif()
-
 
 ######################## Versions ##########################
 
@@ -210,4 +200,6 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}_dbg")
+else()
+    set(CPACK_STRIP_FILES TRUE)
 endif()
