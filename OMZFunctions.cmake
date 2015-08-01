@@ -92,3 +92,27 @@ function(remove_comments SRC_FILE DST_FILE)
     string(REPLACE "__CMAKE_NEWLINE__" ";" DST_OUTPUT ${DST_OUTPUT})
     file(WRITE ${DST_FILE} "${DST_OUTPUT}")
 endfunction()
+
+
+######### Read description file for debian packages ########
+
+function(read_debian_description)
+
+    cmake_parse_arguments("INPUT" "FILE" "" "" ${ARGN})
+    if(NOT INPUT_FILE AND CPACK_PACKAGE_DESCRIPTION_FILE)
+        set(INPUT_FILE ${CPACK_PACKAGE_DESCRIPTION_FILE})
+    else()
+        message(AUTHOR_WARNING "You must specify 'FILE' argument or set 'CPACK_PACKAGE_DESCRIPTION_SUMMARY' variable")
+    endif()
+
+    if(EXISTS ${INPUT_FILE})
+        file(STRINGS ${INPUT_FILE} PACKAGE_DESCRIPTION)
+        foreach(STRING ${PACKAGE_DESCRIPTION})
+            string(REPLACE "\"" "\\\"" STRING ${STRING})
+            set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "${CPACK_DEBIAN_PACKAGE_DESCRIPTION} ${STRING}\n")
+        endforeach()
+        set(CPACK_DEBIAN_PACKAGE_DESCRIPTION ${CPACK_DEBIAN_PACKAGE_DESCRIPTION} PARENT_SCOPE)
+    else()
+        message(AUTHOR_WARNING "Description file '${INPUT_FILE}' does not exists")
+    endif()
+endfunction()
