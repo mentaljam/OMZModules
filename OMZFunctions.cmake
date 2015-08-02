@@ -116,3 +116,69 @@ function(read_debian_description)
         message(AUTHOR_WARNING "Description file '${INPUT_FILE}' does not exists")
     endif()
 endfunction()
+
+
+################## Build Windows ICO files #################
+
+function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
+    if(CONVERT)
+        foreach(INPUT ${INPUT_SVG_VAR})
+            get_filename_component(FILE_NAME ${INPUT} NAME_WE)
+            get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
+            if(LOCATION)
+                file(MAKE_DIRECTORY "${LOCATION}")
+            else()
+                set(LOCATION "${CMAKE_CURRENT_BINARY_DIR}")
+            endif()
+            set(OUTPUT ${LOCATION}/${FILE_NAME}.ico)
+            list(APPEND OUTPUT_ICO ${OUTPUT})
+            add_custom_command(OUTPUT ${OUTPUT}
+                               COMMAND ${CONVERT} -background none -quantize transparent ${INPUT}
+                                       "( -clone 0 -resize 256 )"
+#                                       "( -clone 0 -resize 96 )"
+                                       "( -clone 0 -resize 48 )"
+                                       "( -clone 0 -resize 32 )"
+                                       "( -clone 0 -resize 16 )"
+                                       -background none -quantize transparent ${OUTPUT}
+                               WORKING_DIRECTORY ${LOCATION}
+                               COMMENT "Generating ${FILE_NAME}.ico")
+        endforeach()
+        set(${OUTPUT_ICO_VAR} ${OUTPUT_ICO} PARENT_SCOPE)
+        add_custom_target(update_windows_ico
+                          DEPENDS ${OUTPUT_ICO} VERBATIM
+                          COMMENT "Windows ICO files"
+                          SOURCES ${INPUT_SVG})
+    else()
+        message(AUTHOR_WARNING "To build ICO files You must set the CONVERT path variable")
+    endif()
+endfunction()
+
+
+###################### Build PNG files #####################
+
+function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
+    if(CONVERT)
+        foreach(INPUT ${INPUT_SVG_VAR})
+            get_filename_component(FILE_NAME ${INPUT} NAME_WE)
+            get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
+            if(LOCATION)
+                file(MAKE_DIRECTORY "${LOCATION}")
+            else()
+                set(LOCATION "${CMAKE_CURRENT_BINARY_DIR}")
+            endif()
+            set(OUTPUT ${LOCATION}/${FILE_NAME}.png)
+            list(APPEND OUTPUT_PNG ${OUTPUT})
+            add_custom_command(OUTPUT ${OUTPUT}
+                               COMMAND ${CONVERT} -background none -quantize transparent ${INPUT} ${OUTPUT}
+                               WORKING_DIRECTORY ${LOCATION}
+                               COMMENT "Generating ${FILE_NAME}.png")
+        endforeach()
+        set(${OUTPUT_PNG_VAR} ${OUTPUT_PNG} PARENT_SCOPE)
+        add_custom_target(update_png
+                          DEPENDS ${OUTPUT_PNG} VERBATIM
+                          COMMENT "PNG files"
+                          SOURCES ${INPUT_SVG})
+    else()
+        message(AUTHOR_WARNING "To build PNG files You must set the CONVERT path variable")
+    endif()
+endfunction()
