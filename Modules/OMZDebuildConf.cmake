@@ -12,6 +12,7 @@
 # - CPACK_DEBIAN_CHANGELOG
 # - CPACK_DEBIAN_DISTRIB_REVISION
 # - CPACK_DEBIAN_PREBUILD
+# - CPACK_DEBIAN_CMAKE_ARGUMENTS
 ##
 
 #### Find executables
@@ -111,7 +112,7 @@ if(DEBUILD_EXECUTABLE AND DPUT_EXECUTABLE)
             "            \"\\nStandards-Version: 3.8.4\\n\"\n"
             "            \"Homepage: ${WEB}\\n\\n\"\n"
             "            \"Package: ${CMAKE_PROJECT_NAME}\\n\"\n"
-            "            \"Architecture: any\\n\"\n"
+            "            \"Architecture: ${COMPILED_ARCH}\\n\"\n"
             "            \"Suggests: ${CPACK_DEBIAN_BUILD_SUGGESTS}\\n\"\n"
             "            \"Depends: \"\n"
             "    )\n"
@@ -129,7 +130,7 @@ if(DEBUILD_EXECUTABLE AND DPUT_EXECUTABLE)
             "        endforeach()\n"
             "        file(APPEND \${DEBIAN_CONTROL}\n"
             "                \"\\nPackage: \${COMPONENT}\\n\"\n"
-            "                \"Architecture: any\\n\"\n"
+            "                \"Architecture: ${COMPILED_ARCH}\\n\"\n"
             "                \"Depends: \${DEPENDS}\\n\"\n"
             "                \"Description: \${CPACK_COMPONENT_\${UPPER_COMPONENT}_DESCRIPTION}\\n\"\n"
             "        )\n"
@@ -151,13 +152,12 @@ if(DEBUILD_EXECUTABLE AND DPUT_EXECUTABLE)
             "            \"build:\\n\"\n"
             "            \"\t${CPACK_DEBIAN_PREBUILD}\\n\"\n"
             "            \"\tmkdir $(BUILDDIR)\\n\"\n"
-            "            \"\tcd $(BUILDDIR); cmake -DCMAKE_BUILD_TYPE=Release "
-                                                  "-DBUILD_SHARED_LIBS=YES "
-                                                  "-DBUILD_CLI=YES -DBUILD_QT=YES "
+            "            \"\tcd $(BUILDDIR); cmake ${CPACK_DEBIAN_CMAKE_ARGUMENTS} "
+                                                  "-DCMAKE_BUILD_TYPE=Release "
                                                   "-DCPACK_PACKAGE_VERSION_MAJOR=\\\"${CPACK_PACKAGE_VERSION_MAJOR}\\\" "
                                                   "-DCPACK_PACKAGE_VERSION_MINOR=\\\"${CPACK_PACKAGE_VERSION_MINOR}\\\" "
                                                   "-DCPACK_PACKAGE_VERSION_PATCH=\\\"${CPACK_PACKAGE_VERSION_PATCH}\\\" "
-                                                  "-DV_DATE=\\\"${V_DATE}\\\" n"
+                                                  "-DV_DATE=\\\"${V_DATE}\\\" "
                                                   "-DCMAKE_INSTALL_PREFIX=../debian/tmp/usr ..\\n\"\n"
             "            \"\t$(MAKE) -C $(BUILDDIR) preinstall\\n\"\n"
             "            \"\ttouch build\\n\\n\"\n"
