@@ -1,7 +1,7 @@
 ######################### General ##########################
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 endif(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
 
 include_directories(${CMAKE_BINARY_DIR})
@@ -24,7 +24,7 @@ endif()
 if(QT)
 
     if(UNIX)
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/Qt/5.4/gcc_64/lib/cmake")
+        list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/5.4/gcc_64/lib/cmake")
     endif(UNIX)
 
     find_package(Qt5Widgets REQUIRED)
@@ -63,14 +63,12 @@ if(ARCH EQUAL 64)
     message(STATUS "Configuring 64 bit version")
     if(CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -m64")
-        set(DLL_ARCH ${THIRD_PARTY_DIR}/dll_gcc_x64.tar.gz)
     endif()
     set(COMPILED_ARCH "amd64")
 else(ARCH EQUAL 32)
     message(STATUS "Configuring 32 bit version")
     if(CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -m32")
-        set(DLL_ARCH ${THIRD_PARTY_DIR}/dll_gcc_x32.tar.gz)
         if(WIN32)
             set(CMAKE_RC_FLAGS "-F pe-i386")
         endif()
@@ -81,17 +79,25 @@ endif()
 
 ######################## Versions ##########################
 
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
-set(V_VERSION "unknown_version")
-set(V_DATE "unknown_build")
+if(NOT CPACK_PACKAGE_VERSION_MAJOR)
+    set(CPACK_PACKAGE_VERSION_MAJOR "0")
+endif()
+if(NOT CPACK_PACKAGE_VERSION_MINOR)
+    set(CPACK_PACKAGE_VERSION_MINOR "0")
+endif()
+if(NOT CPACK_PACKAGE_VERSION_PATCH)
+    set(CPACK_PACKAGE_VERSION_PATCH "0")
+endif()
+if(NOT V_DATE)
+    set(V_DATE "unknown_build")
+endif()
 
 if(NOT GIT)
     unset(GIT CACHE)
     find_program(GIT git)
 endif()
-if(GIT)
+
+if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
 
     execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} describe --tags --always
                     OUTPUT_VARIABLE VERSION)
@@ -109,19 +115,14 @@ if(GIT)
             elseif(${VERSION_LENGTH} GREATER 1)
                 list(GET VERSION 0 CPACK_PACKAGE_VERSION_MAJOR)
                 list(GET VERSION 1 CPACK_PACKAGE_VERSION_MINOR)
-                set(V_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-                if(VERSION_STATUS)
-                    set(V_VERSION "${V_VERSION}~${VERSION_STATUS}")
-                endif()
                 if(${VERSION_LENGTH} EQUAL 4)
                     list(GET VERSION 2 CPACK_PACKAGE_VERSION_PATCH)
-                    set(V_VERSION "${V_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
                 endif()
             endif()
         endif()
     endif()
 
-##################### File versions ########################
+    #### File versions
 
     file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
     file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
@@ -137,9 +138,21 @@ if(GIT)
     endforeach()
 
 else(GIT)
+
     message(AUTHOR_WARNING "Git not found - version can not be defined")
+
 endif()
 
+#### Full version string
+set(V_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
+if(VERSION_STATUS)
+    set(V_VERSION "${V_VERSION}-${VERSION_STATUS}")
+endif()
+if(${CPACK_PACKAGE_VERSION_PATCH} GREATER 0)
+    set(V_VERSION "${V_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
+endif()
+
+#### Writing versions header
 string(TOUPPER ${CMAKE_PROJECT_NAME} NAME_UP)
 string(REGEX REPLACE "[- ]" "_" NAME_UP ${NAME_UP})
 file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
@@ -154,8 +167,8 @@ file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
 
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_BINARY_DIR}/doc/LICENSE.txt)
 file(REMOVE ${CPACK_RESOURCE_FILE_LICENSE})
-file(GLOB LICENSE_FILES ${PROJECT_SOURCE_DIR}/LICENSE*)
-list(FIND LICENSE_FILES ${CMAKE_PROJECT_NAME} IND)
+file(GLOB LICENSE_FILES RELATIVE ${CMAKE_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/LICENSE*)
+list(FIND LICENSE_FILES LICENSE.${PROJECT_NAME}.txt IND)
 list(GET LICENSE_FILES ${IND} FILE)
 file(READ ${FILE} LICENSE_TEXT)
 string(REPLACE "." ";" FILE ${FILE})
@@ -170,7 +183,7 @@ foreach(FILE ${LICENSE_FILES})
     list(GET FILE 1 FILE)
     set(FULL_LICENSE_TEXT "${FULL_LICENSE_TEXT}${IND}) ${FILE} license:\n${LICENSE_TEXT}\n\n")
     file(APPEND ${CPACK_RESOURCE_FILE_LICENSE} "${IND}) ${FILE}\n")
-    MATH(EXPR IND "${IND} + 1")
+    math(EXPR IND "${IND} + 1")
 endforeach()
 file(APPEND ${CPACK_RESOURCE_FILE_LICENSE} "\n\n${FULL_LICENSE_TEXT}")
 
