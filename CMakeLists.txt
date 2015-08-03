@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.0)
 
 project("omzmodules" NONE)
-set(PROJECT_NAME "CMakeOMZModules")
+set(PROJECT_NAME "OMZModules")
 
 
 ####################### Setting paths ######################
 
 if(WIN32)
-    set(INSTALL_PATH_CMAKE NTsOMZ/cmake)
+    set(INSTALL_PATH_CMAKE cmake)
 else()
-    set(INSTALL_PATH_CMAKE share/NTsOMZ/cmake)
+    set(INSTALL_PATH_CMAKE share/${PROJECT_NAME}/cmake)
 endif()
 
 
@@ -42,12 +42,12 @@ include(Modules/OMZDebuildConf.cmake)
 
 ########################## Install #########################
 
-configure_file(NTsOMZConfig.cmake.in
-               ${CMAKE_BINARY_DIR}/NTsOMZConfig.cmake
+configure_file(${PROJECT_NAME}Config.cmake.in
+               ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
                @ONLY)
 install(DIRECTORY   Modules
         DESTINATION ${INSTALL_PATH_CMAKE})
-install(FILES       ${CMAKE_BINARY_DIR}/NTsOMZConfig.cmake
+install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         DESTINATION ${INSTALL_PATH_CMAKE})
 
 ##################### Post configuration ###################
