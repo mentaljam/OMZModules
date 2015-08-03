@@ -177,7 +177,6 @@ if(DEBUILD_EXECUTABLE)
         file(APPEND ${TARGET_FILE}
                 "    foreach(GROUP \${CPACK_GROUPS})\n"
                 "    unset(DESCRIPTION)\n"
-#                "        string(TOUPPER \${GROUP} UPPER_GROUP)\n"
                 "        set(DEPENDS \"\\\${shlibs:Depends}\" \${CPACK_GROUP_\${GROUP}_DEPENDS})\n"
                 "        string(REPLACE \";\" \", \" DEPENDS \"\${DEPENDS}\")\n"
                 "        if(\${GROUP} STREQUAL ${CMAKE_PROJECT_NAME})\n"
@@ -338,7 +337,7 @@ if(DEBUILD_EXECUTABLE)
 
     #### Command: debuild -S
     file(APPEND ${TARGET_FILE}
-            "    if(DEB_SOURCE_CHANGES)\n"
+            "    if(DEB_SOURCE_CHANGES OR NOT CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1)\n"
             "        set(DEBUILD_OPTIONS -sd)\n"
             "    else()\n"
             "        set(DEBUILD_OPTIONS -sa)\n"
