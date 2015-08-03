@@ -102,6 +102,13 @@ if(DEBUILD_EXECUTABLE)
     endif()
     set(LAST_MODIFIED " -- ${CPACK_PACKAGE_CONTACT}  ${BUILD_DATE}")
 
+    #### Architecture
+    if(${COMPILED_ARCH} STREQUAL all)
+        set(ARCH all)
+    else()
+        set(ARCH any)
+    endif()
+
     #### Working directory
     file(APPEND ${TARGET_FILE}
             "if(EXISTS \${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake)\n"
@@ -166,7 +173,7 @@ if(DEBUILD_EXECUTABLE)
                 "    string(REPLACE \";\" \", \" DEPENDS \"\${DEPENDS}\")\n"
                 "    file(APPEND \${DEBIAN_CONTROL}\n"
                 "            \"Package: ${CMAKE_PROJECT_NAME}\\n\"\n"
-                "            \"Architecture: ${COMPILED_ARCH}\\n\"\n"
+                "            \"Architecture: ${ARCH}\\n\"\n"
                 "            \"Suggests: \${SUGGESTS}\\n\"\n"
                 "            \"Depends: \${DEPENDS}\\n\"\n"
                 "            \"Description: \${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\\n\"\n"
@@ -198,7 +205,7 @@ if(DEBUILD_EXECUTABLE)
                 "        endforeach()\n"
                 "        file(APPEND \${DEBIAN_CONTROL}\n"
                 "                \"Package: \${DEB_COMPONENT}\\n\"\n"
-                "                \"Architecture: ${COMPILED_ARCH}\\n\"\n"
+                "                \"Architecture: ${ARCH}\\n\"\n"
                 "                \"Suggests: \${SUGGESTS}\\n\"\n"
                 "                \"Depends: \${DEPENDS}\\n\"\n"
                 "                \"Description: \${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\\n\"\n"
