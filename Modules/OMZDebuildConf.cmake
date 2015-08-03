@@ -109,39 +109,39 @@ if(DEBUILD_EXECUTABLE)
         set(ARCH any)
     endif()
 
-    #### Working directory
+    #### Working directory and original sources
     file(APPEND ${TARGET_FILE}
             "if(EXISTS \${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake)\n"
             "    include(\${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake)\n"
             "else()\n"
             "    message(FATAL_ERROR \"Need 'CPackConfig.cmake' to process\")\n"
             "endif()\n"
-            "\nfile(REMOVE_RECURSE \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
             "file(MAKE_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
-            "set(DEBIAN_SOURCE_ORIG_PATH \${CMAKE_CURRENT_LIST_DIR}/Debian/${CMAKE_PROJECT_NAME}_${V_VERSION})\n\n"
-    )
-
-    #### Copy sources
-    file(APPEND ${TARGET_FILE}
-            "execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR} \${DEBIAN_SOURCE_ORIG_PATH}.orig)\n"
-            "string(REPLACE \"\\\\\" \"\" IGNORING_ENTRIES \${CPACK_SOURCE_IGNORE_FILES})\n"
-            "foreach(IGNORING_ENTRY \${IGNORING_ENTRIES})\n"
-            "    set(IGNORING_ENTRY \${DEBIAN_SOURCE_ORIG_PATH}.orig\${IGNORING_ENTRY})\n"
-            "    if(IS_DIRECTORY \${IGNORING_ENTRY})\n"
-            "        file(REMOVE_RECURSE \${IGNORING_ENTRY})\n"
-            "    else()\n"
-            "        file(GLOB IGNORING_ENTRY \${IGNORING_ENTRY}*)\n"
-            "        if(IGNORING_ENTRY)\n"
-            "            file(REMOVE \${IGNORING_ENTRY})\n"
+            "set(DEBIAN_SOURCE_ORIG_PATH \${CMAKE_CURRENT_LIST_DIR}/Debian/${CMAKE_PROJECT_NAME}_${V_VERSION})\n"
+            "if(NOT CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1 AND EXISTS \${DEBIAN_SOURCE_ORIG_PATH})\n"
+            "    file(REMOVE_RECURSE \${DEBIAN_SOURCE_ORIG_PATH})\n"
+            "    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR} \${DEBIAN_SOURCE_ORIG_PATH}.orig)\n"
+            "    string(REPLACE \"\\\\\" \"\" IGNORING_ENTRIES \"\${CPACK_SOURCE_IGNORE_FILES}\")\n"
+            "    foreach(IGNORING_ENTRY \${IGNORING_ENTRIES})\n"
+            "        set(IGNORING_ENTRY \${DEBIAN_SOURCE_ORIG_PATH}.orig\${IGNORING_ENTRY})\n"
+            "        if(IS_DIRECTORY \${IGNORING_ENTRY})\n"
+            "            file(REMOVE_RECURSE \${IGNORING_ENTRY})\n"
+            "        else()\n"
+            "            file(GLOB IGNORING_ENTRY \${IGNORING_ENTRY}*)\n"
+            "            if(IGNORING_ENTRY)\n"
+            "                file(REMOVE \${IGNORING_ENTRY})\n"
+            "            endif()\n"
             "        endif()\n"
-            "    endif()\n"
-            "endforeach()\n\n"
+            "    endforeach()\n"
+            "endif()\n\n"
     )
 
     #### Create the original source tar
     file(APPEND ${TARGET_FILE}
-            "execute_process(COMMAND ${CMAKE_COMMAND} -E tar czf \${DEBIAN_SOURCE_ORIG_PATH}.orig.tar.gz \${DEBIAN_SOURCE_ORIG_PATH}.orig\n"
-            "                WORKING_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n\n"
+            "if(NOT EXISTS \${DEBIAN_SOURCE_ORIG_PATH}.orig.tar.gz)\n"
+            "    execute_process(COMMAND ${CMAKE_COMMAND} -E tar czf \${DEBIAN_SOURCE_ORIG_PATH}.orig.tar.gz \${DEBIAN_SOURCE_ORIG_PATH}.orig\n"
+            "                    WORKING_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
+            "endif()\n\n"
     )
 
     #### Start distributions loop
@@ -150,7 +150,9 @@ if(DEBUILD_EXECUTABLE)
             "    set(RELEASE_PACKAGE_VERSION -1~\${DISTR}\${CPACK_DEBIAN_DISTRIB_REVISION})\n"
             "    set(DEBIAN_SOURCE_DIR \${DEBIAN_SOURCE_ORIG_PATH}\${RELEASE_PACKAGE_VERSION})\n"
             "    set(RELEASE_PACKAGE_VERSION ${V_VERSION}\${RELEASE_PACKAGE_VERSION})\n"
-            "    file(MAKE_DIRECTORY \${DEBIAN_SOURCE_DIR}/debian)\n\n")
+            "    file(REMOVE_RECURSE \${DEBIAN_SOURCE_DIR})\n"
+            "    file(MAKE_DIRECTORY \${DEBIAN_SOURCE_DIR}/debian)\n\n"
+    )
 
     #### File: debian/control
     file(APPEND ${TARGET_FILE}
@@ -360,6 +362,11 @@ if(DEBUILD_EXECUTABLE)
                       COMMAND ${CMAKE_COMMAND} -P BuildDebSource.cmake
                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                       COMMENT "Debian source package")
+
+    add_custom_target(clear_debian_source_packages
+                      COMMAND ${CMAKE_COMMAND} -E remove_directory Debian
+                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                      COMMENT "Clear debian source packages")
 
     if(DPUT_EXECUTABLE)
         add_custom_target(upload_debian_source_package
