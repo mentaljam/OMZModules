@@ -122,7 +122,7 @@ endfunction()
 
 function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
     if(CONVERT)
-        foreach(INPUT ${INPUT_SVG_VAR})
+        foreach(INPUT ${${INPUT_SVG_VAR}})
             get_filename_component(FILE_NAME ${INPUT} NAME_WE)
             get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
             if(LOCATION)
@@ -134,11 +134,11 @@ function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
             list(APPEND OUTPUT_ICO ${OUTPUT})
             add_custom_command(OUTPUT ${OUTPUT}
                                COMMAND ${CONVERT} -background none -quantize transparent ${INPUT}
-                                       "( -clone 0 -resize 256 )"
-#                                       "( -clone 0 -resize 96 )"
-                                       "( -clone 0 -resize 48 )"
-                                       "( -clone 0 -resize 32 )"
-                                       "( -clone 0 -resize 16 )"
+                                       ( -clone 0 -resize 256 )
+#                                       ( -clone 0 -resize 96 )
+                                       ( -clone 0 -resize 48 )
+                                       ( -clone 0 -resize 32 )
+                                       ( -clone 0 -resize 16 )
                                        -background none -quantize transparent ${OUTPUT}
                                WORKING_DIRECTORY ${LOCATION}
                                COMMENT "Generating ${FILE_NAME}.ico")
@@ -158,7 +158,7 @@ endfunction()
 
 function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
     if(CONVERT)
-        foreach(INPUT ${INPUT_SVG_VAR})
+        foreach(INPUT ${${INPUT_SVG_VAR}})
             get_filename_component(FILE_NAME ${INPUT} NAME_WE)
             get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
             if(LOCATION)
