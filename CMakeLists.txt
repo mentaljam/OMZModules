@@ -25,6 +25,7 @@ set(WEB                   "https://github.com/mentaljam/cmake_modules")
 set(CPACK_DEBIAN_BUILD_DEPENDS debhelper cmake)
 set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid)
 set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
+set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos")
 
 set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/"
                               "/\\\\.tx/"
