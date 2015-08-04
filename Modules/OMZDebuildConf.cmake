@@ -45,10 +45,17 @@ if(DEBUILD_EXECUTABLE)
             "############### Build debian source package ################\n\n"
     )
 
+    #### Install components
+    if(CPACK_COMPONENTS_ALL_SET_BY_USER)
+        set(COMPONENTS_ALL ${CPACK_COMPONENTS_ALL})
+    else()
+        get_cmake_property(COMPONENTS_ALL COMPONENTS)
+    endif()
+
     #### Prepare components, components groups and total dependencies
     ## Groups lists
     set(CPACK_DEBIAN_TOTAL_BUILD_DEPENDS ${CPACK_DEBIAN_BUILD_DEPENDS})
-    foreach(COMPONENT ${CPACK_COMPONENTS_ALL})
+    foreach(COMPONENT ${COMPONENTS_ALL})
         string(TOUPPER ${COMPONENT} UPPER_COMPONENT)
         if(NOT CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP)
             set(CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP ${COMPONENT})
