@@ -125,9 +125,6 @@ if(DEBUILD_EXECUTABLE)
             "endif()\n"
             "file(MAKE_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
             "set(DEBIAN_SOURCE_ORIG_PATH \${CMAKE_CURRENT_LIST_DIR}/Debian/${CMAKE_PROJECT_NAME}_${V_VERSION})\n"
-            "if(CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1)\n"
-            "    file(REMOVE_RECURSE \${DEBIAN_SOURCE_ORIG_PATH})\n"
-            "endif()\n"
             "if(NOT EXISTS \${DEBIAN_SOURCE_ORIG_PATH})\n"
             "    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR} \${DEBIAN_SOURCE_ORIG_PATH}.orig)\n"
             "    string(REPLACE \"\\\\\" \"\" IGNORING_ENTRIES \"\${CPACK_SOURCE_IGNORE_FILES}\")\n"
@@ -361,28 +358,28 @@ if(DEBUILD_EXECUTABLE)
             "        set(DEBUILD_OPTIONS -sa)\n"
             "    endif()\n"
             "    set(SOURCE_CHANGES_FILE ${CMAKE_PROJECT_NAME}_\${RELEASE_PACKAGE_VERSION}_source.changes)\n"
-            "    list(APPEND DEB_SOURCE_CHANGES \${SOURCE_CHANGES_FILE})\n"
+            "    set(DEB_SOURCE_CHANGES \"\${DEB_SOURCE_CHANGES} \${SOURCE_CHANGES_FILE}\")\n"
             "    execute_process(COMMAND ${DEBUILD_EXECUTABLE} -S \${DEBUILD_OPTIONS} WORKING_DIRECTORY \${DEBIAN_SOURCE_DIR})\n\n"
             "endforeach()\n\n"
-            "file(WRITE \${CMAKE_CURRENT_LIST_DIR}/Debian/source.changes.lst \"\${DEB_SOURCE_CHANGES}\")\n"
+            "file(WRITE \${CMAKE_CURRENT_LIST_DIR}/Debian/last.changes.lst \"\${DEB_SOURCE_CHANGES}\")\n"
     )
 
-    add_custom_target(debian_source_package
+    add_custom_target(debian_source_packages
                       COMMAND ${CMAKE_COMMAND} -P BuildDebSource.cmake
                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                      COMMENT "Debian source package")
+                      COMMENT "Preparing debian source packages")
 
-    add_custom_target(clear_debian_source_packages
+    add_custom_target(remove_debian_packages_dir
                       COMMAND ${CMAKE_COMMAND} -E remove_directory Debian
                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                      COMMENT "Clear debian source packages")
+                      COMMENT "Removing debian source packages directory")
 
     if(DPUT_EXECUTABLE)
-        add_custom_target(upload_debian_source_package
-                          COMMAND ${DPUT_EXECUTABLE} ${CPACK_DEBIAN_PPA} "$(cat source.changes.lst)"
-                          DEPENDS debian_source_package
+        add_custom_target(upload_debian_source_packages
+                          COMMAND ${DPUT_EXECUTABLE} ${CPACK_DEBIAN_PPA} \$\$\(cat last.changes.lst\)
+                          DEPENDS debian_source_packages
                           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/Debian
-                          COMMENT "Upload debian source package")
+                          COMMENT "Uploading debian source packages")
     else()
         message(AUTHOR_WARNING "Could not find 'dput' executable. Upload target would not be created.")
     endif()
