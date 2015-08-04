@@ -72,7 +72,7 @@ if(DEBUILD_EXECUTABLE)
     endif()
     list(APPEND CPACK_DEBIAN_TOTAL_BUILD_DEPENDS debhelper cmake)
     list(REMOVE_DUPLICATES CPACK_DEBIAN_TOTAL_BUILD_DEPENDS)
-    ## Dependecies handling: "remove depend on myself" and make new names "project-component"
+    ## Dependencies handling: "remove depend on myself" and make new names "project-component"
     foreach(GROUP ${CPACK_GROUPS})
         if(CPACK_GROUP_${GROUP}_DEPENDS)
             list(REMOVE_DUPLICATES CPACK_GROUP_${GROUP}_DEPENDS)
@@ -125,8 +125,10 @@ if(DEBUILD_EXECUTABLE)
             "endif()\n"
             "file(MAKE_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
             "set(DEBIAN_SOURCE_ORIG_PATH \${CMAKE_CURRENT_LIST_DIR}/Debian/${CMAKE_PROJECT_NAME}_${V_VERSION})\n"
-            "if(NOT CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1 AND EXISTS \${DEBIAN_SOURCE_ORIG_PATH})\n"
+            "if(CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1)\n"
             "    file(REMOVE_RECURSE \${DEBIAN_SOURCE_ORIG_PATH})\n"
+            "endif()\n"
+            "if(NOT EXISTS \${DEBIAN_SOURCE_ORIG_PATH})\n"
             "    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR} \${DEBIAN_SOURCE_ORIG_PATH}.orig)\n"
             "    string(REPLACE \"\\\\\" \"\" IGNORING_ENTRIES \"\${CPACK_SOURCE_IGNORE_FILES}\")\n"
             "    foreach(IGNORING_ENTRY \${IGNORING_ENTRIES})\n"
