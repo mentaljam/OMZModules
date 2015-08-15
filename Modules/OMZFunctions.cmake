@@ -1,5 +1,21 @@
 include(CMakeParseArguments)
 
+
+#################### Set Qt defenitions ####################
+
+function(set_qt_defenitions)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_definitions(-DQT_NO_DEBUG)
+        add_definitions(-DQT_NO_DEBUG_OUTPUT)
+        add_definitions(-DQT_NO_WARNING)
+        add_definitions(-DQT_NO_WARNING_OUTPUT)
+        if(CMAKE_COMPILER_IS_GNUCC AND WIN32)
+            set(GCC_FLAGS "${GCC_FLAGS} -mwindows")
+        endif()
+    endif()
+endfunction()
+
+
 ###################### Add module/app ######################
 
 function(add_component NAME)
@@ -121,7 +137,7 @@ endfunction()
 ################## Build Windows ICO files #################
 
 function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
-    if(CONVERT)
+    if(CONVERT_EXECUTABLE)
         foreach(INPUT ${${INPUT_SVG_VAR}})
             get_filename_component(FILE_NAME ${INPUT} NAME_WE)
             get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
@@ -133,7 +149,7 @@ function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
             set(OUTPUT ${LOCATION}/${FILE_NAME}.ico)
             list(APPEND OUTPUT_ICO ${OUTPUT})
             add_custom_command(OUTPUT ${OUTPUT}
-                               COMMAND ${CONVERT} -background none -quantize transparent ${INPUT}
+                               COMMAND ${CONVERT_EXECUTABLE} -background none -quantize transparent ${INPUT}
                                        ( -clone 0 -resize 256 )
 #                                       ( -clone 0 -resize 96 )
                                        ( -clone 0 -resize 48 )
@@ -144,12 +160,8 @@ function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
                                COMMENT "Generating ${FILE_NAME}.ico")
         endforeach()
         set(${OUTPUT_ICO_VAR} ${OUTPUT_ICO} PARENT_SCOPE)
-        add_custom_target(update_windows_ico
-                          DEPENDS ${OUTPUT_ICO} VERBATIM
-                          COMMENT "Windows ICO files"
-                          SOURCES ${INPUT_SVG})
     else()
-        message(AUTHOR_WARNING "To build ICO files You must set the CONVERT path variable")
+        message(AUTHOR_WARNING "To build ICO files You must set the CONVERT_EXECUTABLE path variable")
     endif()
 endfunction()
 
@@ -157,7 +169,7 @@ endfunction()
 ###################### Build PNG files #####################
 
 function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
-    if(CONVERT)
+    if(CONVERT_EXECUTABLE)
         foreach(INPUT ${${INPUT_SVG_VAR}})
             get_filename_component(FILE_NAME ${INPUT} NAME_WE)
             get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
@@ -169,16 +181,12 @@ function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
             set(OUTPUT ${LOCATION}/${FILE_NAME}.png)
             list(APPEND OUTPUT_PNG ${OUTPUT})
             add_custom_command(OUTPUT ${OUTPUT}
-                               COMMAND ${CONVERT} -background none -quantize transparent ${INPUT} ${OUTPUT}
+                               COMMAND ${CONVERT_EXECUTABLE} -background none -quantize transparent ${INPUT} ${OUTPUT}
                                WORKING_DIRECTORY ${LOCATION}
                                COMMENT "Generating ${FILE_NAME}.png")
         endforeach()
         set(${OUTPUT_PNG_VAR} ${OUTPUT_PNG} PARENT_SCOPE)
-        add_custom_target(update_png
-                          DEPENDS ${OUTPUT_PNG} VERBATIM
-                          COMMENT "PNG files"
-                          SOURCES ${INPUT_SVG})
     else()
-        message(AUTHOR_WARNING "To build PNG files You must set the CONVERT path variable")
+        message(AUTHOR_WARNING "To build PNG files You must set the CONVERT_EXECUTABLE path variable")
     endif()
 endfunction()

@@ -19,44 +19,6 @@ if(WIN32)
 endif()
 
 
-######################## Build type ########################
-
-if(QT)
-
-    if(UNIX)
-        list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/5.4/gcc_64/lib/cmake")
-    endif(UNIX)
-
-    find_package(Qt5Widgets REQUIRED)
-    find_package(Qt5LinguistTools)
-
-    include_directories(${Qt5Widgets_INCLUDE_DIRS})
-    set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTOUIC ON)
-    set(CMAKE_AUTORCC ON)
-    
-    if(NOT Qt5LinguistTools_FOUND)
-        message(AUTHOR_WARNING "Qt5LinguistTools were not found, translations will not be generated")
-    endif()
-
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(QT)
-        add_definitions(-DQT_NO_DEBUG)
-        add_definitions(-DQT_NO_DEBUG_OUTPUT)
-        add_definitions(-DQT_NO_WARNING)
-        add_definitions(-DQT_NO_WARNING_OUTPUT)
-    endif()
-    if(CMAKE_COMPILER_IS_GNUCC)
-        set(GCC_FLAGS "${GCC_FLAGS} -s")
-        if(WIN32 AND QT)
-            set(GCC_FLAGS "${GCC_FLAGS} -mwindows")
-        endif()
-    endif()
-endif()
-
-
 ################ Architecture and compiler #################
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -93,16 +55,16 @@ if(NOT V_DATE)
     set(V_DATE "unknown_build")
 endif()
 
-if(NOT GIT)
-    unset(GIT CACHE)
-    find_program(GIT git)
+if(NOT GIT_EXECUTABLE)
+    unset(GIT_EXECUTABLE CACHE)
+    find_program(GIT_EXECUTABLE git)
 endif()
 
-if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
+if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
 
-    execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} describe --tags --always
+    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} describe --tags --always
                     OUTPUT_VARIABLE VERSION)
-    execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ad --date=short
+    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ad --date=short
                     OUTPUT_VARIABLE V_DATE)
     if(VERSION)
         string(STRIP ${VERSION} VERSION)
@@ -128,17 +90,17 @@ if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
     file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
     file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
     foreach(FILE ${S_FILES})
-        execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
+        execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
         if(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
             string(STRIP ${F_DATE} F_DATE)
-            execute_process(COMMAND ${GIT} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
+            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
             string(STRIP ${F_VERSION} F_VERSION)
             file(APPEND ${CMAKE_BINARY_DIR}/sources.h
                  "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
         endif()
     endforeach()
 
-else(GIT)
+else(GIT_EXECUTABLE)
 
     message(AUTHOR_WARNING "Git not found - version can not be defined")
 
