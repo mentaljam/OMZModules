@@ -19,8 +19,15 @@ if(DOXYGEN_FOUND)
 
     message(STATUS "Configuring doxygen")
 
-    set(DOXY_FORMATS_ALL HTML HTMLHELP QHP LATEX PDF MAN RTF XML DOCBOOK)
     set(DOXY_CONF_IN ${CMAKE_CURRENT_LIST_DIR}/doxygen.conf.in)
+    set(DOXY_FORMATS_ALL    HTML HTMLHELP QHP LATEX PDF MAN RTF XML DOCBOOK)
+    set(DOXY_BOOL_OPTIONS   HTMLHELP QHP PDF)
+    set(DOXY_SINGLE_OPTIONS NAME LOGO OUT_DIRECTORY LANGUAGE IMAGE_PATH
+                            HTML_STYLESHEET
+                            CHM_FILE
+                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_FILTER_NAME QHP_FILTER_ATTRS
+    )
+    set(DOXY_MULTI_OPTIONS  INPUT FORMATS FILE_PATTERNS EXCLUDE_PATTERNS)
 
 else(DOXYGEN_FOUND)
 
@@ -45,9 +52,9 @@ function(doxy_add_target)
 
     #### Parse arguments
     cmake_parse_arguments("DOXY"
-                          "HTMLHELP;QHP;PDF"
-                          "NAME;LOGO;OUT_DIRECTORY;LANGUAGE;HTML_STYLESHEET;CHM_FILE;QCH_FILE;QHP_NAMESPACE;QHP_VIRTUAL_FOLDER;QHP_FILTER_NAME;QHP_FILTER_ATTRS"
-                          "INPUT;FORMATS;FILE_PATTERNS;EXCLUDE_PATTERNS"
+                          "${DOXY_BOOL_OPTIONS}"
+                          "${DOXY_SINGLE_OPTIONS}"
+                          "${DOXY_MULTI_OPTIONS}"
                           ${ARGN}
     )
 
