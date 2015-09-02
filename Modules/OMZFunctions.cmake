@@ -20,7 +20,11 @@ endfunction()
 
 function(add_component NAME)
 
-    cmake_parse_arguments("COMPONENT" "BUILD" "VERSION;TYPE;DIRECTORY" "DEPENDS;ADDITIONAL_SOURCES" ${ARGN})
+    cmake_parse_arguments("COMPONENT"
+                          "BUILD"
+                          "VERSION;TYPE;DIRECTORY"
+                          "DEPENDS;EXTERNAL_DEPENDS;ADDITIONAL_SOURCES"
+                          ${ARGN})
 
     if(COMPONENT_VERSION)
         string(TOUPPER ${NAME} NAME_UP)
@@ -52,6 +56,7 @@ function(add_component NAME)
     set(${COMPONENT_TYPE}_${NAME}_BUILD    ${COMPONENT_BUILD}   PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_VERSION  ${COMPONENT_VERSION} PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_DEPENDS  ${COMPONENT_DEPENDS} PARENT_SCOPE)
+    set(${COMPONENT_TYPE}_${NAME}_EXTERNAL_DEPENDS ${COMPONENT_EXTERNAL_DEPENDS} PARENT_SCOPE)
 
 endfunction()
 
