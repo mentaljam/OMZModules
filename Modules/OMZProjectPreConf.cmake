@@ -12,6 +12,8 @@ if(NOT ARCH)
     else()
         set(ARCH 32)
     endif()
+elseif(ARCH EQUAL 32)
+    set(CMAKE_SIZEOF_VOID_P 4)
 endif()
 
 if(WIN32)
