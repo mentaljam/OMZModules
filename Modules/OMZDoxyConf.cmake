@@ -19,15 +19,22 @@ if(DOXYGEN_FOUND)
 
     message(STATUS "Configuring doxygen")
 
-    set(DOXY_CONF_IN ${CMAKE_CURRENT_LIST_DIR}/doxygen.conf.in)
+    #### Formats
     set(DOXY_FORMATS_ALL    HTML HTMLHELP QHP LATEX PDF MAN RTF XML DOCBOOK)
-    set(DOXY_BOOL_OPTIONS   HTMLHELP QHP PDF)
-    set(DOXY_SINGLE_OPTIONS NAME LOGO OUT_DIRECTORY LANGUAGE IMAGE_PATH
-                            HTML_STYLESHEET
+
+    #### Options
+
+    # Bool
+    set(DOXY_OPTIONS_BOOL   RECURSIVE)
+    # Single
+    set(DOXY_OPTIONS_SINGLE IMAGE_PATH
+                            PROJECT_NAME PROJECT_NUMBER PROJECT_BRIEF PROJECT_LOGO
+                            OUTPUT_DIRECTORY OUTPUT_LANGUAGE
+                            DISABLE_INDEX HTML_EXTRA_STYLESHEET
                             CHM_FILE CHM_INDEX_ENCODING
-                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_FILTER_NAME QHP_FILTER_ATTRS
-    )
-    set(DOXY_MULTI_OPTIONS  INPUT FORMATS FILE_PATTERNS EXCLUDE_PATTERNS)
+                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_FILTER_NAME QHP_FILTER_ATTRS)
+    # Multi
+    set(DOXY_OPTIONS_MULTI  INPUT FILE_PATTERNS EXCLUDE_PATTERNS)
 
 else(DOXYGEN_FOUND)
 
@@ -42,6 +49,18 @@ endif()
 
 ######################### Functions ########################
 
+#### Add option string to doxygen.conf
+function(doxy_add_option CONF_FILE OPTION VALUE)
+
+    string(LENGTH "${OPTION}" OPTION_LENGTH)
+    file(APPEND ${CONF_FILE} "${OPTION}")
+    foreach(ITR RANGE ${OPTION_LENGTH} 21)
+        file(APPEND ${CONF_FILE} " ")
+    endforeach()
+    file(APPEND ${CONF_FILE} " = ${VALUE}\n")
+
+endfunction()
+
 #### Add documentation target
 function(doxy_add_target)
 
@@ -50,13 +69,18 @@ function(doxy_add_target)
         return()
     endif()
 
-    #### Parse arguments
-    cmake_parse_arguments("DOXY"
-                          "${DOXY_BOOL_OPTIONS}"
-                          "${DOXY_SINGLE_OPTIONS}"
-                          "${DOXY_MULTI_OPTIONS}"
+    #### Parse function arguments
+    cmake_parse_arguments(DOXY
+                          "HTMLHELP;QHP;PDF;${DOXY_OPTIONS_BOOL}"
+                          "${DOXY_OPTIONS_SINGLE}"
+                          "FORMATS;${DOXY_OPTIONS_MULTI}"
                           ${ARGN}
     )
+    if(DOXY_UNPARSED_ARGUMENTS)
+        foreach(ARG ${DOXY_UNPARSED_ARGUMENTS})
+            message(AUTHOR_WARNING "Unknown argument '${ARG}'")
+        endforeach()
+    endif()
 
     #### Exit function if there is no input specified
     if(NOT DOXY_INPUT)
@@ -67,23 +91,24 @@ function(doxy_add_target)
     string(REPLACE ";" " " DOXY_INPUT "${DOXY_INPUT}")
 
     #### Check project name
-    if(NOT DOXY_NAME)
-        set(DOXY_NAME "${PROJECT_NAME}")
+    if(NOT DOXY_PROJECT_NAME)
+        set(DOXY_PROJECT_NAME "${PROJECT_NAME}")
     endif()
     #### Prepare strings for file names
-    string(REGEX REPLACE "[\\/\\\\\\?%\\*:\\|\"<>. ]" "_" DOXY_NAME_FIX "${DOXY_NAME}")
+    string(REGEX REPLACE "[\\/\\\\\\?%\\*:\\|\"<>. ]" "_" DOXY_NAME_FIX "${DOXY_PROJECT_NAME}")
     string(TOLOWER ${DOXY_NAME_FIX} DOXY_NAME_FIX_LOWER)
+    set(DOXY_PROJECT_NAME \"${DOXY_PROJECT_NAME}\")
 
     #### Check output directory
-    if(NOT DOXY_OUT_DIRECTORY)
-        set(DOXY_OUT_DIRECTORY "${CMAKE_BINARY_DIR}/doc")
+    if(NOT DOXY_OUTPUT_DIRECTORY)
+        set(DOXY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/doc")
     endif()
     #### Set doxygen.conf path
-    set(DOXY_CONF_OUT "${DOXY_OUT_DIRECTORY}/${DOXY_NAME_FIX_LOWER}_doxygen.conf")
+    set(DOXY_CONF_OUT "${DOXY_OUTPUT_DIRECTORY}/${DOXY_NAME_FIX_LOWER}_doxygen.conf")
 
-    #### Check language
-    if(NOT DOXY_LANGUAGE)
-        set(DOXY_LANGUAGE "English")
+    #### Check OUTPUT_LANGUAGE
+    if(NOT DOXY_OUTPUT_LANGUAGE)
+        set(DOXY_OUTPUT_LANGUAGE "English")
     endif()
 
     #### Check formats and process extra options for HTMLHELP, QHP and PDF
@@ -132,7 +157,7 @@ function(doxy_add_target)
             if(PDFLATEX_EXECUTABLE)
                 list(APPEND DOXY_FORMATS "latex")
                 if(WIN32)
-                    set(PDF_MAKE_FILE "${DOXY_OUT_DIRECTORY}/latex/make.bat")
+                    set(PDF_MAKE_FILE "${DOXY_OUTPUT_DIRECTORY}/latex/make.bat")
                 else()
                     set(PDF_MAKE_FILE make -C "${DOC_OUT}/latex")
                     set(TEX_FORMAT sed -i "'1s/.*/\\\\documentclass[oneside]{scrbook}\\n\\\\renewcommand{\\\\chapterheadstartvskip}{}/'"
@@ -141,8 +166,8 @@ function(doxy_add_target)
                 add_custom_command(TARGET build_docs
                                    COMMAND ${TEX_FORMAT}
                                    COMMAND ${MAKE_PDF}
-                                   COMMAND ${CMAKE_COMMAND} -E copy ${DOXY_OUT_DIRECTORY}/latex/refman.pdf
-                                                                    ${DOXY_OUT_DIRECTORY}/${DOXY_NAME_FIX_LOWER}.pdf
+                                   COMMAND ${CMAKE_COMMAND} -E copy ${DOXY_OUTPUT_DIRECTORY}/latex/refman.pdf
+                                                                    ${DOXY_OUTPUT_DIRECTORY}/${DOXY_NAME_FIX_LOWER}.pdf
                                    COMMENT "Generating documentation in PDF"
                                    VERBATIM
                 )
@@ -159,8 +184,11 @@ function(doxy_add_target)
         set(DOXY_FILE_PATTERNS "*.h *.h.in *.hpp *.cpp *.md *.txt")
     endif()
 
+    #### Exclude patterns
+    list(APPEND DOXY_EXCLUDE_PATTERNS "CmakeLists.txt")
+
     #### Create output directory
-    file(MAKE_DIRECTORY "${DOXY_OUT_DIRECTORY}")
+    file(MAKE_DIRECTORY "${DOXY_OUTPUT_DIRECTORY}")
 
     #### Process formats variables
     foreach(FORMAT ${DOXY_FORMATS})
@@ -173,9 +201,34 @@ function(doxy_add_target)
         endif()
     endforeach()
 
+    #### Generating doxygen.conf file
+    # Deletting old one
+    if(EXISTS ${DOXY_CONF_OUT})
+        file(REMOVE ${DOXY_CONF_OUT})
+    endif()
+    # Executables
+    if(HHC_EXECUTABLE OR QHG_EXECUTABLE)
+        file(WRITE ${DOXY_CONF_OUT} "# Executables:\n")
+        if(HHC_EXECUTABLE)
+            doxy_add_option(${DOXY_CONF_OUT} HHC_LOCATION ${HHC_EXECUTABLE})
+        endif()
+        if(QHG_EXECUTABLE)
+            doxy_add_option(${DOXY_CONF_OUT} QHG_LOCATION ${QHG_EXECUTABLE})
+        endif()
+    endif()
+    # Formats
+    file(APPEND ${DOXY_CONF_OUT} "\n# Formats:\n")
     foreach(FORMAT ${DOXY_FORMATS_ALL})
-        if(NOT DOXY_GEN_${FORMAT})
-            set(DOXY_GEN_${FORMAT} "NO")
+        if(DOXY_GEN_${FORMAT})
+            doxy_add_option(${DOXY_CONF_OUT} GENERATE_${FORMAT} YES)
+        else()
+            doxy_add_option(${DOXY_CONF_OUT} GENERATE_${FORMAT} NO)
+        endif()
+    endforeach()
+    file(APPEND ${DOXY_CONF_OUT} "\n# Options:\n")
+    foreach(ARG IN LISTS DOXY_OPTIONS_BOOL DOXY_OPTIONS_SINGLE DOXY_OPTIONS_MULTI)
+        if(DOXY_${ARG})
+            doxy_add_option(${DOXY_CONF_OUT} ${ARG} ${DOXY_${ARG}})
         endif()
     endforeach()
 
@@ -185,13 +238,7 @@ function(doxy_add_target)
                        COMMENT "Generating doxygen output"
     )
 
-    #### Generating doxygen.conf file
-    if(EXISTS ${DOXY_CONF_OUT})
-        file(REMOVE ${DOXY_CONF_OUT})
-    endif()
-    configure_file(${DOXY_CONF_IN} ${DOXY_CONF_OUT})
-
-    set(GENERATED_FILES ${GENERATED_FILES} ${DOXY_OUT_DIRECTORY} PARENT_SCOPE)
+    set(GENERATED_FILES ${GENERATED_FILES} ${DOXY_OUTPUT_DIRECTORY} PARENT_SCOPE)
 
 endfunction()
 

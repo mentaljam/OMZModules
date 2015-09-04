@@ -1,5 +1,13 @@
 ######################### General ##########################
 
+set(DOXYGEN_EXECUTABLE  "" CACHE FILEPATH "Doxygen path")
+set(GIT_EXECUTABLE      "" CACHE FILEPATH "Git path (need for version number defining)")
+set(HHC_EXECUTABLE      "" CACHE FILEPATH "HTML Help generator path")
+set(QHG_EXECUTABLE      "" CACHE FILEPATH "QHP generator path")
+set(QCOLGEN_EXECUTABLE  "" CACHE FILEPATH "Qt collection generator path")
+set(PDFLATEX_EXECUTABLE "" CACHE FILEPATH "PDFLatex path")
+set(CONVERT_EXECUTABLE  "" CACHE FILEPATH "ImageMagick convert utility")
+
 if(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
     list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 endif(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
