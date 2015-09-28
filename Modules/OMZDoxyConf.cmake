@@ -20,19 +20,19 @@ if(DOXYGEN_FOUND)
     message(STATUS "Configuring doxygen")
 
     #### Formats
-    set(DOXY_FORMATS_ALL    HTML HTMLHELP QHP LATEX PDF MAN RTF XML DOCBOOK)
+    set(DOXY_FORMATS_ALL    HTML HTMLHELP QHP LATEX MAN RTF XML DOCBOOK)
 
     #### Options
 
     # Bool
-    set(DOXY_OPTIONS_BOOL   RECURSIVE)
+    set(DOXY_OPTIONS_BOOL   RECURSIVE DISABLE_INDEX SEARCHENGINE)
     # Single
     set(DOXY_OPTIONS_SINGLE IMAGE_PATH
                             PROJECT_NAME PROJECT_NUMBER PROJECT_BRIEF PROJECT_LOGO
                             OUTPUT_DIRECTORY OUTPUT_LANGUAGE
-                            DISABLE_INDEX HTML_EXTRA_STYLESHEET
+                            HTML_EXTRA_STYLESHEET
                             CHM_FILE CHM_INDEX_ENCODING
-                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_FILTER_NAME QHP_FILTER_ATTRS)
+                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_CUST_FILTER_NAME QHP_CUST_FILTER_ATTRS QHP_SECT_FILTER_ATTRS)
     # Multi
     set(DOXY_OPTIONS_MULTI  INPUT FILE_PATTERNS EXCLUDE_PATTERNS)
 
@@ -112,44 +112,46 @@ function(doxy_add_target)
     endif()
 
     #### Check formats and process extra options for HTMLHELP, QHP and PDF
-    if(DOXY_HTMLHELP OR DOXY_QHP OR DOXY_PDF OR NOT DOXY_FORMATS)
+    if(NOT DOXY_FORMATS AND NOT DOXY_HTMLHELP AND NOT DOXY_QHP AND NOT DOXY_PDF)
 
         set(DOXY_FORMATS "html")
 
+    else()
+
         #### HTMLHELP
         if(DOXY_HTMLHELP)
-
             if(NOT HHC_EXECUTABLE)
                 unset(HHC_EXECUTABLE CACHE)
                 find_program(HHC_EXECUTABLE "hhc")
             endif()
             if(HHC_EXECUTABLE)
-                list(APPEND DOXY_FORMATS "htmlhelp")
-                set(DOXY_HTML_SEARCHENGINE "NO")
+                list(APPEND DOXY_FORMATS "html" "htmlhelp")
+                set(DOXY_SEARCHENGINE "NO")
                 set(DOXY_DISABLE_INDEX "YES")
                 set(DOXY_GRAPHVIS "NO")
             else()
                 message(WARNING "'hhc' compiler is not found - Windows HELP files will not be created")
             endif()
+        endif()
 
         #### QHP
-        elseif(DOXY_QHP)
-
+        if(DOXY_QHP)
             if(NOT QHG_EXECUTABLE)
                 unset(QHG_EXECUTABLE CACHE)
                 find_program(QHG_EXECUTABLE "qhelpgenerator")
             endif()
             if(QHG_EXECUTABLE)
-                list(APPEND DOXY_FORMATS "qhp")
-                set(DOXY_HTML_SEARCHENGINE "NO")
+                list(APPEND DOXY_FORMATS "html" "qhp")
+                set(DOXY_SEARCHENGINE "NO")
                 set(DOXY_DISABLE_INDEX "YES")
                 set(DOXY_GRAPHVIS "NO")
             else()
                 message(WARNING "'qhelpgenerator' is not found - Qt HELP files will not be created")
             endif()
+        endif()
 
-        elseif(DOXY_PDF)
-
+        #### PDF
+        if(DOXY_PDF)
             if(NOT PDFLATEX_EXECUTABLE)
                 unset(PDFLATEX_EXECUTABLE CACHE)
                 find_program(PDFLATEX_EXECUTABLE pdflatex)
@@ -174,7 +176,6 @@ function(doxy_add_target)
             elseif()
                 message(WARNING "'pdflatex' not found - PDF documentation will not be created")
             endif()
-
         endif()
 
     endif()
@@ -191,6 +192,7 @@ function(doxy_add_target)
     file(MAKE_DIRECTORY "${DOXY_OUTPUT_DIRECTORY}")
 
     #### Process formats variables
+    list(REMOVE_DUPLICATES DOXY_FORMATS)
     foreach(FORMAT ${DOXY_FORMATS})
         string(TOUPPER ${FORMAT} FORMAT_UPPER)
         list(FIND DOXY_FORMATS_ALL ${FORMAT_UPPER} IND)
@@ -227,7 +229,7 @@ function(doxy_add_target)
     endforeach()
     file(APPEND ${DOXY_CONF_OUT} "\n# Options:\n")
     foreach(ARG IN LISTS DOXY_OPTIONS_BOOL DOXY_OPTIONS_SINGLE DOXY_OPTIONS_MULTI)
-        if(DOXY_${ARG})
+        if(DEFINED DOXY_${ARG})
             doxy_add_option(${DOXY_CONF_OUT} ${ARG} ${DOXY_${ARG}})
         endif()
     endforeach()
