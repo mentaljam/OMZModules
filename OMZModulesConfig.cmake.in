@@ -1,9 +1,30 @@
+######################### Version ##########################
+
 set(@PROJECT_NAME@_VERSION_STRING "@V_VERSION@")
 set(@PROJECT_NAME@_VERSION_MAJOR  "@CPACK_PACKAGE_VERSION_MAJOR@")
 set(@PROJECT_NAME@_VERSION_MINOR  "@CPACK_PACKAGE_VERSION_MINOR@")
 set(@PROJECT_NAME@_VERSION_PATCH  "@CPACK_PACKAGE_VERSION_PATCH@")
 
 message(STATUS "Found OMZ CMake modules v${@PROJECT_NAME@_VERSION_STRING}")
+
+
+######################### Variables ########################
+
+#### Build architecture
+# 32 - 32bit, 64 - 64bit
+set(ARCH "" CACHE STRING "Build x86 or x86-64 application")
+
+#### Additional packages paths
+set(DOXYGEN_EXECUTABLE  "" CACHE FILEPATH "Doxygen path")
+set(GIT_EXECUTABLE      "" CACHE FILEPATH "Git path (need for version number defining)")
+set(HHC_EXECUTABLE      "" CACHE FILEPATH "HTML Help generator path")
+set(QHG_EXECUTABLE      "" CACHE FILEPATH "QHP generator path")
+set(QCOLGEN_EXECUTABLE  "" CACHE FILEPATH "Qt collection generator path")
+set(PDFLATEX_EXECUTABLE "" CACHE FILEPATH "PDFLatex path")
+set(CONVERT_EXECUTABLE  "" CACHE FILEPATH "ImageMagick convert utility")
+
+
+###################### Listing modules #####################
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/Modules)
 string(TOUPPER "@PROJECT_NAME@" PROJECT_NAME_UPPER)
