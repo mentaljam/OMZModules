@@ -61,5 +61,4 @@ install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 
 ##################### Post configuration ###################
 
-list(APPEND PROJECT_FILES Modules/doxygen.conf.in)
 include(Modules/OMZProjectPostConf.cmake)
