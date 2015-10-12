@@ -27,9 +27,10 @@ function(add_component NAME)
                           ${ARGN})
 
     if(COMPONENT_VERSION)
-        string(TOUPPER ${NAME} NAME_UP)
+        string(TOUPPER ${NAME} NAME_UPPER)
+        string(REGEX REPLACE "[- ]" "_" NAME_UPPER ${NAME_UPPER})
         file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
-                    "#define VERSION_${NAME_UP} \"${COMPONENT_VERSION}\"\n")
+                    "#define VERSION_${NAME_UPPER}_STRING \"${COMPONENT_VERSION}\"\n")
     endif()
 
     if(NOT COMPONENT_TYPE)

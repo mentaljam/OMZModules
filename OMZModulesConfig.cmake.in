@@ -1,14 +1,18 @@
 ######################### Version ##########################
 
-set(@PROJECT_NAME@_VERSION_STRING "@V_VERSION@")
-set(@PROJECT_NAME@_VERSION_MAJOR  "@CPACK_PACKAGE_VERSION_MAJOR@")
-set(@PROJECT_NAME@_VERSION_MINOR  "@CPACK_PACKAGE_VERSION_MINOR@")
-set(@PROJECT_NAME@_VERSION_PATCH  "@CPACK_PACKAGE_VERSION_PATCH@")
+set(OMZMODULES_VERSION_STRING "@OMZMODULES_VERSION_STRING@")
+set(OMZMODULES_VERSION_MAJOR  "@OMZMODULES_VERSION_MAJOR@")
+set(OMZMODULES_VERSION_MINOR  "@OMZMODULES_VERSION_MAJOR@")
+set(OMZMODULES_VERSION_PATCH  "@OMZMODULES_VERSION_PATCH@")
 
-message(STATUS "Found OMZ CMake modules v${@PROJECT_NAME@_VERSION_STRING}")
+message(STATUS "Found OMZ CMake modules v${OMZMODULES_VERSION_STRING}")
 
 
 ######################### Variables ########################
+
+#### Project name upper
+string(TOUPPER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_UPPER)
+string(REGEX REPLACE "[- ]" "_" CMAKE_PROJECT_NAME_UPPER ${CMAKE_PROJECT_NAME_UPPER})
 
 #### Build architecture
 # 32 - 32bit, 64 - 64bit
@@ -23,14 +27,21 @@ set(QCOLGEN_EXECUTABLE  "" CACHE FILEPATH "Qt collection generator path")
 set(PDFLATEX_EXECUTABLE "" CACHE FILEPATH "PDFLatex path")
 set(CONVERT_EXECUTABLE  "" CACHE FILEPATH "ImageMagick convert utility")
 
+#### Project version
+option(VERSION_FROM_GIT "Fetch version from git tags" ON)
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR "0" CACHE STRING "Project major version number")
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR "0" CACHE STRING "Project minor version number")
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH "" CACHE STRING "Project patch version number")
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE "unknown_date" CACHE STRING "Project version date")
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS "" CACHE STRING "Project version status (alpha, beta, rc...")
+
 
 ###################### Listing modules #####################
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/Modules)
-string(TOUPPER "@PROJECT_NAME@" PROJECT_NAME_UPPER)
-file(GLOB ${PROJECT_NAME_UPPER}
+file(GLOB OMZMODULES
      RELATIVE ${CMAKE_CURRENT_LIST_DIR}/Modules
      ${CMAKE_CURRENT_LIST_DIR}/Modules/*.cmake)
 
-message(STATUS "All OMZ modules are listed in '${PROJECT_NAME_UPPER}'")
+message(STATUS "All OMZ modules are listed in 'OMZMODULES' variable")
 include(${CMAKE_CURRENT_LIST_DIR}/Modules/OMZFunctions.cmake)

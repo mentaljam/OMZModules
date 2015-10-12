@@ -18,4 +18,4 @@ include(CPack)
 ######################### Versions #########################
 
 file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
-     "\n#endif // ${NAME_UP}_VERSION_H\n\n")
+     "#endif // ${CMAKE_PROJECT_NAME_UPPER}_VERSION_H\n")

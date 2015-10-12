@@ -1,16 +1,8 @@
 ######################### General ##########################
 
-set(DOXYGEN_EXECUTABLE  "" CACHE FILEPATH "Doxygen path")
-set(GIT_EXECUTABLE      "" CACHE FILEPATH "Git path (need for version number defining)")
-set(HHC_EXECUTABLE      "" CACHE FILEPATH "HTML Help generator path")
-set(QHG_EXECUTABLE      "" CACHE FILEPATH "QHP generator path")
-set(QCOLGEN_EXECUTABLE  "" CACHE FILEPATH "Qt collection generator path")
-set(PDFLATEX_EXECUTABLE "" CACHE FILEPATH "PDFLatex path")
-set(CONVERT_EXECUTABLE  "" CACHE FILEPATH "ImageMagick convert utility")
-
 if(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
     list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-endif(EXISTS ${PROJECT_SOURCE_DIR}/cmake)
+endif()
 
 include_directories(${CMAKE_BINARY_DIR})
 
@@ -50,32 +42,20 @@ else()
     message(STATUS "Configuring architecture independent version")
 endif()
 
-######################## Versions ##########################
 
-if(NOT CPACK_PACKAGE_VERSION_MAJOR)
-    set(CPACK_PACKAGE_VERSION_MAJOR "0")
-endif()
-if(NOT CPACK_PACKAGE_VERSION_MINOR)
-    set(CPACK_PACKAGE_VERSION_MINOR "0")
-endif()
-if(NOT CPACK_PACKAGE_VERSION_PATCH)
-    set(CPACK_PACKAGE_VERSION_PATCH "0")
-endif()
-if(NOT V_DATE)
-    set(V_DATE "unknown_build")
-endif()
+######################## Versions ##########################
 
 if(NOT GIT_EXECUTABLE)
     unset(GIT_EXECUTABLE CACHE)
     find_program(GIT_EXECUTABLE git)
 endif()
 
-if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
+if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git AND VERSION_FROM_GIT)
 
     execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} describe --tags --always
                     OUTPUT_VARIABLE VERSION)
     execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ad --date=short
-                    OUTPUT_VARIABLE V_DATE)
+                    OUTPUT_VARIABLE ${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE)
     if(VERSION)
         string(STRIP ${VERSION} VERSION)
         message(STATUS "Using git tag ${VERSION} as version number")
@@ -83,13 +63,13 @@ if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
         list(LENGTH VERSION VERSION_LENGTH)
         if(NOT ${VERSION_LENGTH} EQUAL 0)
             if(${VERSION_LENGTH} EQUAL 1)
-                set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION})
-                set(V_VERSION ${VERSION})
+                set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR ${VERSION})
+                set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION})
             elseif(${VERSION_LENGTH} GREATER 1)
-                list(GET VERSION 0 CPACK_PACKAGE_VERSION_MAJOR)
-                list(GET VERSION 1 CPACK_PACKAGE_VERSION_MINOR)
+                list(GET VERSION 0 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR)
+                list(GET VERSION 1 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR)
                 if(${VERSION_LENGTH} EQUAL 4)
-                    list(GET VERSION 2 CPACK_PACKAGE_VERSION_PATCH)
+                    list(GET VERSION 2 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH)
                 endif()
             endif()
         endif()
@@ -110,33 +90,67 @@ if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
         endif()
     endforeach()
 
-else(GIT_EXECUTABLE)
+else()
 
-    message(AUTHOR_WARNING "Git not found - version can not be defined")
+    if(NOT GIT_EXECUTABLE)
+        message(AUTHOR_WARNING "Git is not found - version can not be defined")
+    elseif(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git)
+        message(AUTHOR_WARNING "No .git folder - version can not be defined")
+    endif()
 
 endif()
 
 #### Full version string
-set(V_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-if(VERSION_STATUS)
-    set(V_VERSION "${V_VERSION}-${VERSION_STATUS}")
+set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
+    "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR}")
+if(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
+        "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}-${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS}")
 endif()
-if(${CPACK_PACKAGE_VERSION_PATCH} GREATER 0)
-    set(V_VERSION "${V_VERSION}-${CPACK_PACKAGE_VERSION_PATCH}")
+if(${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH})
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
+        "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}-${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH}")
+endif()
+
+if(NOT VERSION_FROM_GIT)
+    message(STATUS "Using manually defined version ${VERSION}")
 endif()
 
 #### Writing versions header
-string(TOUPPER ${CMAKE_PROJECT_NAME} NAME_UP)
-string(REGEX REPLACE "[- ]" "_" NAME_UP ${NAME_UP})
 file(WRITE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
-     "#ifndef ${NAME_UP}_VERSION_H\n#define ${NAME_UP}_VERSION_H\n\n"
-     "#define VERSION_${NAME_UP} \"${V_VERSION}\"\n"
-     "#define VER_DATE_${NAME_UP} \"${V_DATE}\"\n"
-     "#define VER_PLATFORM_${NAME_UP} \"${CMAKE_SYSTEM_NAME}\"\n"
-     "#define VER_ARCH_${NAME_UP} \"${COMPILED_ARCH}\"\n\n")
+     "#ifndef ${CMAKE_PROJECT_NAME_UPPER}_VERSION_H\n#define ${CMAKE_PROJECT_NAME_UPPER}_VERSION_H\n\n"
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_MAJOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR}\n"
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_MINOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR}\n"
+)
+if(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH)
+    file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
+            "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_PATCH ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH}\n"
+    )
+else()
+    file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
+            "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_PATCH 0\n"
+    )
+endif()
+file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_STRING \"${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}\"\n"
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_DATE \"${${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE}\"\n"
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_OS \"${CMAKE_SYSTEM_NAME}\"\n"
+     "#define VERSION_${CMAKE_PROJECT_NAME_UPPER}_ARCH \"${COMPILED_ARCH}\"\n\n"
+)
 
 
 ####################### CPack options ######################
+
+#### Version
+if(NOT CPACK_PACKAGE_VERSION_MAJOR)
+    set(CPACK_PACKAGE_VERSION_MAJOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR})
+endif()
+if(NOT CPACK_PACKAGE_VERSION_MINOR)
+    set(CPACK_PACKAGE_VERSION_MINOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR})
+endif()
+if(NOT CPACK_PACKAGE_VERSION_PATCH)
+    set(CPACK_PACKAGE_VERSION_PATCH ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH})
+endif()
 
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_BINARY_DIR}/doc/LICENSE.txt)
 file(REMOVE ${CPACK_RESOURCE_FILE_LICENSE})
@@ -166,9 +180,11 @@ set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 if(NOT ${COMPILED_ARCH} STREQUAL "all")
     string(TOLOWER "${CMAKE_CXX_COMPILER_ID}${CMAKE_CXX_COMPILER_VERSION}" COMPILER_NAME)
     string(REPLACE "." "" COMPILER_NAME ${COMPILER_NAME})
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${V_VERSION}_${CMAKE_SYSTEM_NAME}_${COMPILER_NAME}_${COMPILED_ARCH}")
+    set(CPACK_PACKAGE_FILE_NAME
+        "${CMAKE_PROJECT_NAME}_${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}_${CMAKE_SYSTEM_NAME}_${COMPILER_NAME}_${COMPILED_ARCH}")
 else()
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${V_VERSION}_${CMAKE_SYSTEM_NAME}_${COMPILED_ARCH}")
+    set(CPACK_PACKAGE_FILE_NAME
+        "${CMAKE_PROJECT_NAME}_${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}_${CMAKE_SYSTEM_NAME}_${COMPILED_ARCH}")
 endif()
 
 if(WIN32)
@@ -176,9 +192,9 @@ if(WIN32)
     set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR})
     if(CPACK_PACKAGE_VERSION_PATCH)
         set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION}.${CPACK_PACKAGE_VERSION_PATCH})
-    endif(CPACK_PACKAGE_VERSION_PATCH)
+    endif()
 elseif(UNIX)
-    set(CPACK_DEBIAN_PACKAGE_VERSION      ${V_VERSION})
+    set(CPACK_DEBIAN_PACKAGE_VERSION      ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING})
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${COMPILED_ARCH})
 endif()
 

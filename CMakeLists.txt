@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project("omzmodules" NONE)
 set(PROJECT_NAME "OMZModules")
+set(CMAKE_PROJECT_NAME_UPPER "OMZMODULES")
 
 
 ####################### Setting paths ######################
@@ -15,6 +16,7 @@ endif()
 
 ############### Setting additional variables ###############
 
+set(VERSION_FROM_GIT ON)
 set(COMPILED_ARCH "all")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NTs OMZ CMake modules")
 set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/doc/description.txt)
@@ -44,7 +46,8 @@ if(BUILD_PPA_PACKAGE)
   set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos"
       CACHE STRING "PPA name")
   set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
-  set(CPACK_DEBIAN_CMAKE_ARGUMENTS -DV_DATE=${V_DATE})
+  set(CPACK_DEBIAN_CMAKE_ARGUMENTS
+      -D${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE=${${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE})
     include(Modules/OMZDebuildConf.cmake)
 endif()
 
@@ -61,4 +64,6 @@ install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 
 ##################### Post configuration ###################
 
+file(GLOB_RECURSE MODULES_FILES *.cmake)
+list(APPEND PROJECT_FILES ${MODULES_FILES})
 include(Modules/OMZProjectPostConf.cmake)
