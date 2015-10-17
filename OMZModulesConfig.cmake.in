@@ -6,6 +6,7 @@ set(OMZMODULES_VERSION_MINOR  "@OMZMODULES_VERSION_MINOR@")
 set(OMZMODULES_VERSION_PATCH  "@OMZMODULES_VERSION_PATCH@")
 
 message(STATUS "Found OMZ CMake modules v${OMZMODULES_VERSION_STRING}")
+include(${CMAKE_CURRENT_LIST_DIR}/Modules/OMZFunctions.cmake)
 
 
 ######################### Variables ########################
@@ -29,11 +30,7 @@ set(CONVERT_EXECUTABLE  "" CACHE FILEPATH "ImageMagick convert utility")
 
 #### Project version
 option(VERSION_FROM_GIT "Fetch version from git tags" ON)
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR "0" CACHE STRING "Project major version number")
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR "0" CACHE STRING "Project minor version number")
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH "" CACHE STRING "Project patch version number")
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE "unknown_date" CACHE STRING "Project version date")
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS "" CACHE STRING "Project version status (alpha, beta, rc...")
+set_project_version()
 
 
 ###################### Listing modules #####################
@@ -44,4 +41,3 @@ file(GLOB OMZMODULES
      ${CMAKE_CURRENT_LIST_DIR}/Modules/*.cmake)
 
 message(STATUS "All OMZ modules are listed in 'OMZMODULES' variable")
-include(${CMAKE_CURRENT_LIST_DIR}/Modules/OMZFunctions.cmake)

@@ -1,6 +1,50 @@
 include(CMakeParseArguments)
 
 
+################## Write versions to cache #################
+
+function(set_project_version)
+
+    #### Parsing arguments
+    cmake_parse_arguments("VERSION" "" "MAJOR;MINOR;PATCH;DATE;STATUS" "" ${ARGN})
+
+    #### Checking arguments
+    if(NOT VERSION_MAJOR)
+        set(VERSION_MAJOR "0")
+    endif()
+    if(NOT VERSION_MINOR)
+        set(VERSION_MINOR "0")
+    endif()
+    if(NOT VERSION_DATE)
+        set(VERSION_DATE "unknown_date")
+    endif()
+
+    #### Full version string
+    set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}")
+    if(${VERSION_PATCH})
+        set(VERSION_STRING "${VERSION_STRING}-${VERSION_PATCH}")
+    endif()
+    if(VERSION_STATUS)
+        set(VERSION_STRING "${VERSION_STRING}-${VERSION_STATUS}")
+    endif()
+
+    #### Writing to cache
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR  ${VERSION_MAJOR}
+        CACHE STRING  "Project major version number" FORCE)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR  ${VERSION_MINOR}
+        CACHE STRING  "Project minor version number" FORCE)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH  ${VERSION_PATCH}
+        CACHE STRING  "Project patch version number" FORCE)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE   ${VERSION_DATE}
+        CACHE STRING   "Project version date" FORCE)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS ${VERSION_STATUS}
+        CACHE STRING "Project version status (alpha, beta, rc...)" FORCE)
+    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION_STRING}
+        CACHE STRING "Full version string" FORCE)
+
+endfunction()
+
+
 #################### Set Qt defenitions ####################
 
 function(set_qt_defenitions)

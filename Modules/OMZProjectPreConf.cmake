@@ -23,7 +23,7 @@ endif()
 
 ################ Architecture and compiler #################
 
-if(NOT DEFINED CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
@@ -52,71 +52,68 @@ endif()
 
 ######################## Versions ##########################
 
-if(NOT GIT_EXECUTABLE)
-    unset(GIT_EXECUTABLE CACHE)
-    find_program(GIT_EXECUTABLE git)
-endif()
+if(VERSION_FROM_GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
 
-if(GIT_EXECUTABLE AND EXISTS ${CMAKE_SOURCE_DIR}/.git AND VERSION_FROM_GIT)
+    if(NOT GIT_EXECUTABLE)
+        unset(GIT_EXECUTABLE CACHE)
+        find_program(GIT_EXECUTABLE git)
+    endif()
+    if(GIT_EXECUTABLE)
 
-    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} describe --tags --always
-                    OUTPUT_VARIABLE VERSION)
-    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ad --date=short
-                    OUTPUT_VARIABLE ${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE)
-    if(VERSION)
-        string(STRIP ${VERSION} VERSION)
-        message(STATUS "Using git tag ${VERSION} as version number")
-        string(REGEX REPLACE "[-.]" ";" VERSION ${VERSION})
-        list(LENGTH VERSION VERSION_LENGTH)
-        if(NOT ${VERSION_LENGTH} EQUAL 0)
-            if(${VERSION_LENGTH} EQUAL 1)
-                set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR ${VERSION})
-                set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION})
-            elseif(${VERSION_LENGTH} GREATER 1)
-                list(GET VERSION 0 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR)
-                list(GET VERSION 1 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR)
-                if(${VERSION_LENGTH} EQUAL 4)
-                    list(GET VERSION 2 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH)
+        unset(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR CACHE)
+        unset(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR CACHE)
+        unset(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH CACHE)
+        unset(${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE  CACHE)
+
+        execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} describe --tags --always
+                        OUTPUT_VARIABLE VERSION)
+        execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ad --date=short
+                        OUTPUT_VARIABLE ${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE)
+        if(VERSION)
+            string(STRIP ${VERSION} VERSION)
+            message(STATUS "Using git tag ${VERSION} as version number")
+            string(REGEX REPLACE "[-.]" ";" VERSION ${VERSION})
+            list(LENGTH VERSION VERSION_LENGTH)
+            if(NOT ${VERSION_LENGTH} EQUAL 0)
+                if(${VERSION_LENGTH} EQUAL 1)
+                    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR ${VERSION})
+                elseif(${VERSION_LENGTH} GREATER 1)
+                    list(GET VERSION 0 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR)
+                    list(GET VERSION 1 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR)
+                    if(${VERSION_LENGTH} EQUAL 4)
+                        list(GET VERSION 2 ${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH)
+                    endif()
                 endif()
             endif()
         endif()
-    endif()
 
-    #### File versions
+        set_project_version(MAJOR  ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR}
+                            MINOR  ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR}
+                            PATCH  ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH}
+                            DATE   ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE}
+                            STATUS ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS})
 
-    file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
-    file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
-    foreach(FILE ${S_FILES})
-        execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
-        if(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
-            string(STRIP ${F_DATE} F_DATE)
-            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
-            string(STRIP ${F_VERSION} F_VERSION)
-            file(APPEND ${CMAKE_BINARY_DIR}/sources.h
-                 "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
-        endif()
-    endforeach()
+        #### File versions
 
-else()
+        file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
+        file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
+        foreach(FILE ${S_FILES})
+            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
+            if(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
+                string(STRIP ${F_DATE} F_DATE)
+                execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
+                string(STRIP ${F_VERSION} F_VERSION)
+                file(APPEND ${CMAKE_BINARY_DIR}/sources.h
+                     "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
+            endif()
+        endforeach()
 
-    if(NOT GIT_EXECUTABLE)
+    else()
         message(AUTHOR_WARNING "Git is not found - version can not be defined")
-    elseif(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git)
-        message(AUTHOR_WARNING "No .git folder - version can not be defined")
     endif()
 
-endif()
-
-#### Full version string
-set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
-    "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR}.${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR}")
-if(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
-        "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}-${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS}")
-endif()
-if(${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH})
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING
-        "${${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING}-${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH}")
+elseif(VERSION_FROM_GIT AND NOT EXISTS ${CMAKE_SOURCE_DIR}/.git)
+    message(AUTHOR_WARNING "No .git folder - version can not be defined")
 endif()
 
 if(NOT VERSION_FROM_GIT)
@@ -141,13 +138,13 @@ endif()
 ####################### CPack options ######################
 
 #### Version
-if(NOT CPACK_PACKAGE_VERSION_MAJOR)
+if(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
     set(CPACK_PACKAGE_VERSION_MAJOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR})
 endif()
-if(NOT CPACK_PACKAGE_VERSION_MINOR)
+if(NOT DEFINED CPACK_PACKAGE_VERSION_MINOR)
     set(CPACK_PACKAGE_VERSION_MINOR ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR})
 endif()
-if(NOT CPACK_PACKAGE_VERSION_PATCH)
+if(NOT DEFINED CPACK_PACKAGE_VERSION_PATCH)
     set(CPACK_PACKAGE_VERSION_PATCH ${${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH})
 endif()
 
@@ -201,4 +198,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}_dbg")
 else()
     set(CPACK_STRIP_FILES TRUE)
+endif()
+
+if(CPACK_DOWNLOAD_ALL)
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}_online")
 endif()

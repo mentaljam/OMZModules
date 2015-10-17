@@ -31,9 +31,9 @@ set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/"
 
 ###################### CMake modules #######################
 
+include(Modules/OMZFunctions.cmake)
 include(Modules/OMZProjectPreConf.cmake)
 include(Modules/OMZDoxyConf.cmake)
-include(Modules/OMZFunctions.cmake)
 
 
 #################### Packaging options #####################
