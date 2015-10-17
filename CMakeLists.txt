@@ -67,3 +67,4 @@ install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 file(GLOB_RECURSE MODULES_FILES *.cmake)
 list(APPEND PROJECT_FILES ${MODULES_FILES})
 include(Modules/OMZProjectPostConf.cmake)
+include(CPack)
