@@ -240,3 +240,57 @@ function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
         message(AUTHOR_WARNING "To build PNG files You must set the CONVERT_EXECUTABLE path variable")
     endif()
 endfunction()
+
+
+###################### Get definitions #####################
+
+function(get_defenition HEADER DEFENITION OUTPUT_VARIABLE)
+
+    set(WORKING_DIR ${CMAKE_BINARY_DIR}/tmp)
+    string(REGEX REPLACE "[\\\\]\\\\[!\\\"#$%&'()*+,:;<=>?@\\\\^`{|}~]" "_" FILE_NAME ${OUTPUT_VARIABLE})
+    set(LOG_FILE ${WORKING_DIR}/${FILE_NAME}.log)
+    set(SOURCE ${WORKING_DIR}/${FILE_NAME}.c)
+    set(BINARY ${WORKING_DIR}/${FILE_NAME})
+    if(WIN32)
+        set(BINARY ${BINARY}.exe)
+    endif()
+
+    file(MAKE_DIRECTORY ${WORKING_DIR})
+    file(WRITE ${SOURCE}
+            "#include <stdio.h>\n"
+            "#include <${HEADER}>\n"
+            "int main() {\n"
+            "   printf(${DEFENITION});\n"
+            "   return 0;\n"
+            "}\n"
+    )
+
+    get_property(I_DIRS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+    foreach(DIR ${I_DIRS})
+        list(APPEND I_ARG "-I${DIR}")
+    endforeach()
+
+    if(CMAKE_COMPILER_IS_GNUCC)
+        set(COMMAND_STR -fPIC ${SOURCE} ${I_ARG} -o ${BINARY})
+    elseif(MSVC)
+        set(COMMAND_STR ${SOURCE} ${I_ARG} -Fe${BINARY})
+    else()
+        message(WARNING "Unsupported compiler")
+    endif()
+
+    if(COMMAND_STR)
+        execute_process(COMMAND ${CMAKE_CXX_COMPILER} ${COMMAND_STR}
+                        OUTPUT_FILE    ${LOG_FILE}
+                        ERROR_FILE     ${LOG_FILE}
+                        ERROR_VARIABLE ERROR_VAR)
+    endif()
+
+    if(NOT ERROR_VAR)
+        execute_process(COMMAND ${BINARY} OUTPUT_VARIABLE ${OUTPUT_VARIABLE})
+        set(${OUTPUT_VARIABLE} ${${OUTPUT_VARIABLE}} PARENT_SCOPE)
+    else()
+        message(WARNING "Error retrieving defenition '${DEFENITION}'. Read '${ERROR_FILE}' for more details.")
+        set(NOT_DELETE_TMP TRUE)
+    endif()
+
+endfunction()

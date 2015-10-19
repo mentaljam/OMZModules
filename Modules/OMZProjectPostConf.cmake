@@ -7,4 +7,7 @@ add_custom_target(project_files
 
 ###################### Generated Files #####################
 
+if(NOT NOT_DELETE_TMP)
+    file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/tmp)
+endif()
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}")
