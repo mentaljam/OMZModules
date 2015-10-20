@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project("omzmodules" NONE)
 set(PROJECT_NAME "OMZModules")
-set(CMAKE_PROJECT_NAME_UPPER "OMZMODULES")
+set(PROJECT_NAME_UPPER "OMZMODULES")
 
 
 ####################### Setting paths ######################
@@ -47,7 +47,7 @@ if(BUILD_PPA_PACKAGE)
       CACHE STRING "PPA name")
   set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
   set(CPACK_DEBIAN_CMAKE_ARGUMENTS
-      -D${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE=${${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE})
+      -D${PROJECT_NAME_UPPER}_VERSION_DATE=${${PROJECT_NAME_UPPER}_VERSION_DATE})
     include(Modules/OMZDebuildConf.cmake)
 endif()
 

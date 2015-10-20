@@ -12,8 +12,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/Modules/OMZFunctions.cmake)
 ######################### Variables ########################
 
 #### Project name upper
-string(TOUPPER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_UPPER)
-string(REGEX REPLACE "[- ]" "_" CMAKE_PROJECT_NAME_UPPER ${CMAKE_PROJECT_NAME_UPPER})
+string(TOUPPER ${CMAKE_PROJECT_NAME} PROJECT_NAME_UPPER)
+string(REGEX REPLACE "[- ]" "_" PROJECT_NAME_UPPER ${PROJECT_NAME_UPPER})
 
 #### Build architecture
 # 32 - 32bit, 64 - 64bit

@@ -29,17 +29,17 @@ function(set_project_version)
     endif()
 
     #### Writing to cache
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MAJOR  ${VERSION_MAJOR}
+    set(${PROJECT_NAME_UPPER}_VERSION_MAJOR  ${VERSION_MAJOR}
         CACHE STRING  "Project major version number" FORCE)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_MINOR  ${VERSION_MINOR}
+    set(${PROJECT_NAME_UPPER}_VERSION_MINOR  ${VERSION_MINOR}
         CACHE STRING  "Project minor version number" FORCE)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_PATCH  ${VERSION_PATCH}
+    set(${PROJECT_NAME_UPPER}_VERSION_PATCH  ${VERSION_PATCH}
         CACHE STRING  "Project patch version number" FORCE)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_DATE   ${VERSION_DATE}
+    set(${PROJECT_NAME_UPPER}_VERSION_DATE   ${VERSION_DATE}
         CACHE STRING   "Project version date" FORCE)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STATUS ${VERSION_STATUS}
+    set(${PROJECT_NAME_UPPER}_VERSION_STATUS ${VERSION_STATUS}
         CACHE STRING "Project version status (alpha, beta, rc...)" FORCE)
-    set(${CMAKE_PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION_STRING}
+    set(${PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION_STRING}
         CACHE STRING "Full version string" FORCE)
 
 endfunction()
