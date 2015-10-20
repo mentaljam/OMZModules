@@ -93,21 +93,6 @@ if(VERSION_FROM_GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
                             DATE   ${${PROJECT_NAME_UPPER}_VERSION_DATE}
                             STATUS ${${PROJECT_NAME_UPPER}_VERSION_STATUS})
 
-        #### File versions
-
-        file(REMOVE ${CMAKE_BINARY_DIR}/sources.h)
-        file(GLOB_RECURSE S_FILES RELATIVE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/*)
-        foreach(FILE ${S_FILES})
-            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE} OUTPUT_VARIABLE F_DATE)
-            if(NOT ${F_DATE} MATCHES "/\\b(fatal)\\b/i")
-                string(STRIP ${F_DATE} F_DATE)
-                execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE} OUTPUT_VARIABLE F_VERSION)
-                string(STRIP ${F_VERSION} F_VERSION)
-                file(APPEND ${CMAKE_BINARY_DIR}/sources.h
-                     "/**\n * @file ${FILE}\n * @version ${F_VERSION}\n * @date ${F_DATE}\n */\n\n")
-            endif()
-        endforeach()
-
     else()
         message(AUTHOR_WARNING "Git is not found - version can not be defined")
     endif()

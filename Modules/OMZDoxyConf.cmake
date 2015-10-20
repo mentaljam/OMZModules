@@ -27,7 +27,7 @@ if(DOXYGEN_FOUND)
     # Bool
     set(DOXY_OPTIONS_BOOL   RECURSIVE DISABLE_INDEX SEARCHENGINE)
     # Single
-    set(DOXY_OPTIONS_SINGLE IMAGE_PATH
+    set(DOXY_OPTIONS_SINGLE IMAGE_PATH USE_MDFILE_AS_MAINPAGE
                             PROJECT_NAME PROJECT_NUMBER PROJECT_BRIEF PROJECT_LOGO
                             OUTPUT_DIRECTORY OUTPUT_LANGUAGE
                             HTML_EXTRA_STYLESHEET
@@ -98,6 +98,11 @@ function(doxy_add_target)
     string(REGEX REPLACE "[\\/\\\\\\?%\\*:\\|\"<>. ]" "_" DOXY_NAME_FIX "${DOXY_PROJECT_NAME}")
     string(TOLOWER ${DOXY_NAME_FIX} DOXY_NAME_FIX_LOWER)
     set(DOXY_PROJECT_NAME \"${DOXY_PROJECT_NAME}\")
+
+    #### Check project version
+    if(NOT DOXY_PROJECT_NUMBER)
+        set(DOXY_PROJECT_NUMBER ${${PROJECT_NAME_UPPER}_VERSION_STRING})
+    endif()
 
     #### Check output directory
     if(NOT DOXY_OUTPUT_DIRECTORY)
@@ -286,5 +291,41 @@ function(doxy_generate_qhc DOXY_QHC_FILE DOXY_QCH_LIST)
                        COMMAND ${QCOLGEN_EXECUTABLE} ${DOXY_QHC_FILE}p -o ${DOXY_QHC_FILE}
                        COMMENT "Generating Qt collection output"
     )
+
+endfunction()
+
+
+#### Write a file for sources versions
+function(write_sources_versions OUTPUT_FILE SOURCES)
+
+    if(GIT_EXECUTABLE)
+
+        list(REMOVE_ITEM ARGN ${OUTPUT_FILE} "CMakeLists.txt")
+
+        file(WRITE ${OUTPUT_FILE} "/**\n")
+        foreach(FILE ${ARGN})
+            if(${FILE} MATCHES ".*(CMakeLists\.txt)")
+                continue()
+            endif()
+            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE}
+                            OUTPUT_VARIABLE SOURCE_DATE
+                            RESULT_VARIABLE RESULT)
+            if(${RESULT} EQUAL 0)
+                string(STRIP ${SOURCE_DATE} SOURCE_DATE)
+                execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE}
+                                OUTPUT_VARIABLE SOURCE_VERSION)
+                string(STRIP ${SOURCE_VERSION} SOURCE_VERSION)
+                file(APPEND ${OUTPUT_FILE}
+                     " *\n * @file ${FILE}\n * @version ${SOURCE_VERSION}\n * @date ${SOURCE_DATE}\n")
+            endif()
+        endforeach()
+        file(APPEND ${OUTPUT_FILE} " *\n **/\n\n")
+
+    else()
+
+        message(WARNING "Git is not found - sources versions can not be read")
+        return()
+
+    endif()
 
 endfunction()
