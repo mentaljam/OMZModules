@@ -57,14 +57,18 @@ endif()
 configure_file(${PROJECT_NAME}Config.cmake.in
                ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
                @ONLY)
-install(DIRECTORY   Modules
-        DESTINATION ${INSTALL_PATH_CMAKE})
 install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         DESTINATION ${INSTALL_PATH_CMAKE})
+install(DIRECTORY   Modules
+        DESTINATION ${INSTALL_PATH_CMAKE})
+install(DIRECTORY   Templates
+        DESTINATION ${INSTALL_PATH_CMAKE})
+
 
 ##################### Post configuration ###################
 
-file(GLOB_RECURSE MODULES_FILES *.cmake)
-list(APPEND PROJECT_FILES ${MODULES_FILES})
+file(GLOB_RECURSE MODULES_FILES   Modules/*)
+file(GLOB_RECURSE TEMPLATES_FILES Templates/*)
+list(APPEND PROJECT_FILES ${MODULES_FILES} ${TEMPLATES_FILES})
 include(Modules/OMZProjectPostConf.cmake)
 include(CPack)

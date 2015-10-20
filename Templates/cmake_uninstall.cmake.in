@@ -1,0 +1,26 @@
+################## Remove installed files ##################
+
+#### Checking install_manifest.txt
+if(NOT EXISTS install_manifest.txt)
+    message(FATAL_ERROR "Cannot find install manifest 'install_manifest.txt'")
+endif()
+
+#### Removing all installed files
+message(STATUS "Removing @PROJECT_NAME@")
+file(STRINGS install_manifest.txt INSTALLED_FILES)
+list(APPEND INSTALLED_FILES install_manifest.txt)
+foreach(FILE ${INSTALLED_FILES})
+    if(EXISTS ${FILE})
+        message(STATUS "Removing: ${FILE}")
+        execute_process(COMMAND "${CMAKE_COMMAND}" -E remove "${FILE}"
+                        RETURN_VALUE RESULT)
+        if(NOT ${RESULT} EQUAL 0)
+            message(FATAL_ERROR "Failed to remove: ${FILE}")
+        endif()
+    else()
+        message(STATUS "Skipping unexisting: ${FILE}")
+    endif()
+endforeach()
+
+#### Install prefix
+message(STATUS "Skipping installation directories, remove manually if need")
