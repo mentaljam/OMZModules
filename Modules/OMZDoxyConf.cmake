@@ -304,7 +304,7 @@ function(write_sources_versions OUTPUT_FILE SOURCES)
 
         file(WRITE ${OUTPUT_FILE} "/**\n")
         foreach(FILE ${ARGN})
-            if(${FILE} MATCHES ".*(CMakeLists\.txt)")
+            if(${FILE} MATCHES ".*(CMakeLists\\.txt)")
                 continue()
             endif()
             execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE}
