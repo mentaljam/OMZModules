@@ -32,6 +32,8 @@ if(CMAKE_COMPILER_IS_GNUCC)
         set(GCC_FLAGS "${GCC_FLAGS} -s")
     endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -m${ARCH}")
+elseif(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_FLAGS}")
 endif()
 
 if(NOT COMPILED_ARCH)
