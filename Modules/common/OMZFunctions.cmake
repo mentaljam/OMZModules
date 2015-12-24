@@ -1,53 +1,6 @@
-include(CMakeParseArguments)
-
-
-################## Write versions to cache #################
-
-function(set_project_version)
-
-    #### Parsing arguments
-    cmake_parse_arguments("VERSION" "" "MAJOR;MINOR;PATCH;DATE;STATUS" "" ${ARGN})
-
-    #### Checking arguments
-    if(NOT VERSION_MAJOR)
-        set(VERSION_MAJOR "0")
-    endif()
-    if(NOT VERSION_MINOR)
-        set(VERSION_MINOR "0")
-    endif()
-    if(NOT VERSION_DATE)
-        set(VERSION_DATE "unknown_date")
-    endif()
-
-    #### Full version string
-    set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}")
-    if(${VERSION_PATCH})
-        set(VERSION_STRING "${VERSION_STRING}-${VERSION_PATCH}")
-    endif()
-    if(VERSION_STATUS)
-        set(VERSION_STRING "${VERSION_STRING}-${VERSION_STATUS}")
-    endif()
-
-    #### Writing to cache
-    set(${PROJECT_NAME_UPPER}_VERSION_MAJOR  ${VERSION_MAJOR}
-        CACHE STRING  "Project major version number" FORCE)
-    set(${PROJECT_NAME_UPPER}_VERSION_MINOR  ${VERSION_MINOR}
-        CACHE STRING  "Project minor version number" FORCE)
-    set(${PROJECT_NAME_UPPER}_VERSION_PATCH  ${VERSION_PATCH}
-        CACHE STRING  "Project patch version number" FORCE)
-    set(${PROJECT_NAME_UPPER}_VERSION_DATE   ${VERSION_DATE}
-        CACHE STRING   "Project version date" FORCE)
-    set(${PROJECT_NAME_UPPER}_VERSION_STATUS ${VERSION_STATUS}
-        CACHE STRING "Project version status (alpha, beta, rc...)" FORCE)
-    set(${PROJECT_NAME_UPPER}_VERSION_STRING ${VERSION_STRING}
-        CACHE STRING "Full version string" FORCE)
-
-endfunction()
-
-
 #################### Set Qt defenitions ####################
 
-function(set_qt_defenitions)
+macro(set_qt_defenitions)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_definitions(-DQT_NO_DEBUG)
         add_definitions(-DQT_NO_DEBUG_OUTPUT)
@@ -57,7 +10,7 @@ function(set_qt_defenitions)
             set(GCC_FLAGS "${GCC_FLAGS} -mwindows")
         endif()
     endif()
-endfunction()
+endmacro()
 
 
 ###################### Add module/app ######################
@@ -294,3 +247,64 @@ function(get_defenition HEADER DEFENITION OUTPUT_VARIABLE)
     endif()
 
 endfunction()
+
+
+########## Combine license files to a single one ###########
+
+function(generate_single_license OUTPUT_FILE)
+
+    cmake_parse_arguments("INPUT" "FILES" "" "" ${ARGN})
+
+    ## Find license files if not provided
+    if(NOT INPUT_FILES)
+        file(GLOB INPUT_FILES RELATIVE ${CMAKE_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/*license*)
+        if(NOT INPUT_FILES)
+            message(WARNING "No license files found")
+            return()
+        endif()
+        message(STATUS "Combining license files from the project source directory")
+        ## Move the main license file to the first position
+        list(LENGTH INPUT_FILES LIST_LENGTH)
+        if(LIST_LENGTH GREATER 1)
+            foreach(FILE ${INPUT_FILES})
+                if(FILE MATCHES ".*${CMAKE_PROJECT_NAME}.*")
+                    list(REMOVE_ITEM INPUT_FILES ${FILE})
+                    set(INPUT_FILES ${FILE} ${INPUT_FILES})
+                    break()
+                endif()
+            endforeach()
+        endif()
+    endif()
+
+    ## Write the combined file
+    file(WRITE ${OUTPUT_FILE} "Contents:\n")
+    set(IND 1)
+    foreach(FILE ${INPUT_FILES})
+        file(READ ${FILE} LICENSE_TEXT)
+        string(REPLACE ".txt" "" FILE ${FILE})
+        string(REGEX REPLACE "(?i)license[._ ]" "" FILE ${FILE})
+        file(APPEND ${OUTPUT_FILE} "${IND}) ${FILE}\n")
+        set(FULL_LICENSE_TEXT "${FULL_LICENSE_TEXT}${IND}) ${FILE} license:\n${LICENSE_TEXT}\n\n")
+        math(EXPR IND "${IND} + 1")
+    endforeach()
+    file(APPEND ${OUTPUT_FILE} "\n\n${FULL_LICENSE_TEXT}")
+
+endfunction()
+
+
+##################### Postconfiguration ####################
+
+macro(postconfig)
+
+    #### Project Files
+    add_custom_target(project_files
+                      COMMENT "Project files"
+                      SOURCES ${PROJECT_FILES})
+
+    #### Generated Files
+    if(NOT NOT_DELETE_TMP)
+        file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/tmp)
+    endif()
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}")
+
+endmacro()

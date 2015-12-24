@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 
 project("omzmodules" NONE)
 set(PROJECT_NAME "OMZModules")
-set(PROJECT_NAME_UPPER "OMZMODULES")
 
 
 ####################### Setting paths ######################
@@ -16,8 +15,6 @@ endif()
 
 ############### Setting additional variables ###############
 
-set(VERSION_FROM_GIT ON)
-set(COMPILED_ARCH "all")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NTs OMZ CMake modules")
 set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/doc/description.txt)
 set(CPACK_PACKAGE_VENDOR      "NTs OMZ")
@@ -31,23 +28,29 @@ set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/"
 
 ###################### CMake modules #######################
 
-include(Modules/OMZFunctions.cmake)
-include(Modules/OMZProjectPreConf.cmake)
-include(Modules/OMZDoxyConf.cmake)
+include(CMakeParseArguments)
+include(Modules/common/OMZInitVars.cmake)
+include(Modules/common/OMZFunctions.cmake)
+include(Modules/common/OMZVersion.cmake)
+include(Modules/common/OMZCPack.cmake)
+
+set_project_version(GIT)
+configure_cpack()
 
 
 #################### Packaging options #####################
 
 if(BUILD_PPA_PACKAGE)
-  set(CPACK_DEBIAN_BUILD_DEPENDS debhelper cmake
+    set(CPACK_DEBIAN_BUILD_DEPENDS debhelper cmake
       CACHE STRING "Common debian source build dependencies")
-  set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid wily
+    set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid wily
       CACHE STRING "PPA distributions names")
-  set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos"
+    set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos"
       CACHE STRING "PPA name")
-  set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
-  set(CPACK_DEBIAN_CMAKE_ARGUMENTS
-      -D${PROJECT_NAME_UPPER}_VERSION_DATE=${${PROJECT_NAME_UPPER}_VERSION_DATE})
+    set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
+    set(CPACK_DEBIAN_CMAKE_ARGUMENTS
+            -D${PROJECT_NAME_UPPER}_VERSION_DATE=${${PROJECT_NAME_UPPER}_VERSION_DATE})
+    set(OMZModules_PATH ${PROJECT_SOURCE_DIR})
     include(Modules/OMZDebuildConf.cmake)
 endif()
 
@@ -70,5 +73,5 @@ install(DIRECTORY   Templates
 file(GLOB_RECURSE MODULES_FILES   Modules/*)
 file(GLOB_RECURSE TEMPLATES_FILES Templates/*)
 list(APPEND PROJECT_FILES ${MODULES_FILES} ${TEMPLATES_FILES})
-include(Modules/OMZProjectPostConf.cmake)
+postconfig()
 include(CPack)
