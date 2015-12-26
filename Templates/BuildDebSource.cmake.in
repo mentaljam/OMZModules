@@ -1,0 +1,230 @@
+############### Build debian source package ################
+
+#### Working directory and original sources
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
+else()
+    message(FATAL_ERROR "Need 'CPackConfig.cmake' to process")
+endif()
+string(TOLOWER ${CPACK_PACKAGE_NAME} CPACK_PACKAGE_NAME)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/Debian")
+set(DEBIAN_SOURCE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_DEBIAN_PACKAGE_VERSION}")
+set(DEBIAN_SOURCE_PATH "${CMAKE_CURRENT_LIST_DIR}/Debian/${DEBIAN_SOURCE_NAME}")
+if(NOT EXISTS "${DEBIAN_SOURCE_PATH}.orig")
+    message(STATUS "Preparing '${DEBIAN_SOURCE_NAME}.orig' directory")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "@CMAKE_SOURCE_DIR@" "${DEBIAN_SOURCE_PATH}.orig")
+    string(REPLACE "\\" "" IGNORING_ENTRIES "${CPACK_SOURCE_IGNORE_FILES}")
+    foreach(IGNORING_ENTRY ${IGNORING_ENTRIES})
+        set(IGNORING_ENTRY "${DEBIAN_SOURCE_PATH}.orig${IGNORING_ENTRY}")
+        if(IS_DIRECTORY "${IGNORING_ENTRY}")
+            file(REMOVE_RECURSE "${IGNORING_ENTRY}")
+        else()
+            file(GLOB IGNORING_ENTRY "${IGNORING_ENTRY}*")
+            if(IGNORING_ENTRY)
+                file(REMOVE "${IGNORING_ENTRY}")
+            endif()
+        endif()
+    endforeach()
+else()
+    message(STATUS "Sources for this version are already prepared, skipping")
+endif()
+
+#### Create the original source tar
+if(NOT EXISTS "${DEBIAN_SOURCE_PATH}.orig.tar.gz")
+    message(STATUS "Compressing '${DEBIAN_SOURCE_NAME}.orig.tar.gz'")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar czf "${DEBIAN_SOURCE_NAME}.orig.tar.gz" "${DEBIAN_SOURCE_NAME}.orig"
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/Debian")
+endif()
+
+#### Start distributions loop
+message(STATUS "Writing configuration for distributions")
+foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
+    message(STATUS "  ${DISTR}:")
+    set(RELEASE_PACKAGE_VERSION "-${CPACK_DEBIAN_PACKAGE_REVISION}~${DISTR}${CPACK_DEBIAN_DISTRIB_REVISION}")
+    set(DEBIAN_SOURCE_DIR "${DEBIAN_SOURCE_PATH}${RELEASE_PACKAGE_VERSION}")
+    set(RELEASE_PACKAGE_VERSION "${CPACK_DEBIAN_PACKAGE_VERSION}${RELEASE_PACKAGE_VERSION}")
+    file(REMOVE_RECURSE "${DEBIAN_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${DEBIAN_SOURCE_DIR}/debian")
+
+    #### File: debian/control
+    message(STATUS "    debian/control")
+    set(DEBIAN_CONTROL "${DEBIAN_SOURCE_DIR}/debian/control")
+    string(REPLACE ";" ", " SUGGESTS "${CPACK_DEBIAN_BUILD_SUGGESTS}")
+    string(REPLACE ";" ", " DEPENDS "${CPACK_DEBIAN_TOTAL_BUILD_DEPENDS}")
+    file(WRITE "${DEBIAN_CONTROL}"
+           "Source: ${CPACK_PACKAGE_NAME}\n"
+           "Section: devel\n"
+           "Priority: optional\n"
+           "Maintainer: ${CPACK_PACKAGE_CONTACT}\n"
+           "Build-Depends: ${DEPENDS}\n"
+#           "Standards-Version: 3.8.4\n"
+           "Homepage: @WEB@\n\n"
+    )
+    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
+        set(DEPENDS "\${shlibs:Depends}" ${CPACK_DEBIAN_PACKAGE_DEPENDS})
+        string(REPLACE ";" ", " DEPENDS "${DEPENDS}")
+        file(APPEND ${DEBIAN_CONTROL}
+                "Package: ${CPACK_PACKAGE_NAME}\n"
+                "Architecture: @COMPILED_ARCH@\n"
+                "Suggests: ${SUGGESTS}\n"
+                "Depends: ${DEPENDS}\n"
+                "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
+                "${CPACK_DEBIAN_PACKAGE_DESCRIPTION}\n"
+        )
+    else()
+        foreach(GROUP ${CPACK_GROUPS})
+            unset(DESCRIPTION)
+            set(DEPENDS "\${shlibs:Depends}" ${CPACK_GROUP_${GROUP}_DEPENDS})
+            string(REPLACE ";" ", " DEPENDS "${DEPENDS}")
+            if(GROUP STREQUAL "${CPACK_PACKAGE_NAME}")
+                set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}")
+            else()
+                set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}-${GROUP}")
+            endif()
+            foreach(COMPONENT ${CPACK_GROUP_${GROUP}_COMPONENTS})
+                string(TOUPPER ${COMPONENT} UPPER_COMPONENT)
+                if(CPACK_COMPONENT_${UPPER_COMPONENT}_DISPLAY_NAME)
+                    set(DESCRIPTION "${CPACK_COMPONENT_${UPPER_COMPONENT}_DISPLAY_NAME}")
+                else()
+                    set(DESCRIPTION "Component '${COMPONENT}'")
+                endif()
+                if(CPACK_COMPONENT_${UPPER_COMPONENT}_DESCRIPTION)
+                    set(DESCRIPTION "${DESCRIPTION} - ${CPACK_COMPONENT_${UPPER_COMPONENT}_DESCRIPTION}")
+                endif()
+                set(DESCRIPTION "${DESCRIPTION}\n")
+            endforeach()
+            file(APPEND ${DEBIAN_CONTROL}
+                    "Package: ${DEB_COMPONENT}\n"
+                    "Architecture: @COMPILED_ARCH@\n"
+                    "Suggests: ${SUGGESTS}\n"
+                    "Depends: ${DEPENDS}\n"
+                    "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
+                    "${CPACK_DEBIAN_PACKAGE_DESCRIPTION}"
+                    " This package constains:\n${DESCRIPTION}\n"
+            )
+        endforeach()
+    endif()
+
+    #### File: debian/rules
+    message(STATUS "    debian/rules")
+    set(DEBIAN_RULES "${DEBIAN_SOURCE_DIR}/debian/rules")
+    file(WRITE ${DEBIAN_RULES}
+            "#!/usr/bin/make -f\n\n"
+            "BUILDDIR = build_dir\n\n"
+            "build:\n"
+    )
+    foreach(PREBUILD_LINE ${CPACK_DEBIAN_PREBUILD})
+        file(APPEND ${DEBIAN_RULES}
+            "\t${PREBUILD_LINE}\n"
+    )
+    endforeach()
+    string(REPLACE ";" " " CMAKE_ARGUMENTS "${CPACK_DEBIAN_CMAKE_ARGUMENTS}")
+    file(APPEND "${DEBIAN_RULES}"
+            "\tmkdir $(BUILDDIR)\n"
+            "\tcd $(BUILDDIR); cmake ${CMAKE_ARGUMENTS} "
+                  "-DCMAKE_BUILD_TYPE=Release "
+                  "-DVERSION_MAJOR=@PROJECT_VERSION_MAJOR@ "
+                  "-DVERSION_MINOR=@PROJECT_VERSION_MINOR@ "
+                  "-DVERSION_PATCH=@PROJECT_VERSION_PATCH@ "
+                  "-DVERSION_TWEAK=@PROJECT_VERSION_TWEAK@ "
+                  "-DCMAKE_INSTALL_PREFIX=../debian/tmp/usr ..\n"
+            "\t$(MAKE) -C $(BUILDDIR) preinstall\n"
+            "\ttouch build\n\n"
+            "binary: binary-indep binary-arch\n\n"
+            "binary-indep: build\n\n"
+            "binary-arch: build\n"
+    )
+    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
+        file(APPEND "${DEBIAN_RULES}"
+                "\t$(MAKE) -C $(BUILDDIR) install\n"
+                "\tmkdir -p debian/tmp/DEBIAN\n"
+                "\tdpkg-gensymbols -p${CPACK_PACKAGE_NAME}\n"
+        )
+    else()
+        foreach(GROUP ${CPACK_GROUPS})
+            if(GROUP STREQUAL "${CPACK_PACKAGE_NAME}")
+                set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}")
+            else()
+                set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}-${GROUP}")
+            endif()
+            set(PATH "debian/${DEB_COMPONENT}")
+            foreach(COMPONENT ${CPACK_GROUP_${GROUP}_COMPONENTS})
+                file(APPEND "${DEBIAN_RULES}"
+                       "\tcd $(BUILDDIR); cmake -DCOMPONENT=${COMPONENT} "
+                                               "-DCMAKE_INSTALL_PREFIX=../${PATH}/usr "
+                                               "-P cmake_install.cmake\n"
+                       "\tmkdir -p ${PATH}/DEBIAN\n"
+                       "\tdpkg-gensymbols -p${DEB_COMPONENT} -P${PATH}\n"
+                )
+            endforeach()
+        endforeach()
+    endif()
+    file(APPEND "${DEBIAN_RULES}"
+            "\tdh_shlibdeps\n"
+            "\tdh_strip\n"
+    )
+    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
+            file(APPEND "${DEBIAN_RULES}"
+                    "\tdpkg-gencontrol -p${CPACK_PACKAGE_NAME}\n"
+                    "\tdpkg --build debian/tmp ..\n"
+            )
+    else()
+            foreach(GROUP ${CPACK_GROUPS})
+                if(GROUP STREQUAL "${CPACK_PACKAGE_NAME}")
+                    set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}")
+                else()
+                    set(DEB_COMPONENT "${CPACK_PACKAGE_NAME}-${GROUP}")
+                endif()
+                set(PATH "debian/${DEB_COMPONENT}")
+                file(APPEND "${DEBIAN_RULES}"
+                        "\tdpkg-gencontrol -p${DEB_COMPONENT} -P${PATH} -Tdebian/${DEB_COMPONENT}.substvars\n"
+                        "\tdpkg --build ${PATH} ..\n"
+                )
+            endforeach()
+    endif()
+    file(APPEND "${DEBIAN_RULES}"
+            "\nclean:\n"
+            "\trm -f build\n"
+            "\trm -rf $(BUILDDIR)\n\n"
+            ".PHONY: binary binary-arch binary-indep clean\n"
+    )
+    execute_process(COMMAND chmod +x "${DEBIAN_RULES}")
+
+    #### File: debian/copyright
+    message(STATUS "    debian/copyright")
+    set(DEBIAN_COPYRIGHT "${DEBIAN_SOURCE_DIR}/debian/copyright")
+    configure_file("${CPACK_RESOURCE_FILE_LICENSE}" "${DEBIAN_COPYRIGHT}" COPYONLY)
+
+    #### File: debian/compat
+    message(STATUS "    debian/compat")
+    file(WRITE "${DEBIAN_SOURCE_DIR}/debian/compat" "7")
+
+    #### File: debian/source/format
+    message(STATUS "    debian/format")
+    file(WRITE "${DEBIAN_SOURCE_DIR}/debian/source/format" "3.0 (quilt)")
+
+    #### File: debian/changelog
+    message(STATUS "    debian/changelog")
+    set(DEBIAN_CHANGELOG "${DEBIAN_SOURCE_DIR}/debian/changelog")
+    file(WRITE "${DEBIAN_CHANGELOG}"
+            "${CPACK_PACKAGE_NAME} (${RELEASE_PACKAGE_VERSION}) ${DISTR}; urgency=low\n\n"
+            "${CPACK_DEBIAN_CHANGELOG}\n\n"
+            "${CPACK_DEBIAN_CHANGELOG_END}\n"
+    )
+
+    #### Command: debuild -S
+    message(STATUS "    running 'debuild'")
+    if(DEB_SOURCE_CHANGES OR NOT CPACK_DEBIAN_DISTRIB_REVISION EQUAL 0)
+        set(DEBUILD_OPTIONS "-sd")
+    else()
+        set(DEBUILD_OPTIONS "-sa")
+    endif()
+    set(SOURCE_CHANGES_FILE "${CPACK_PACKAGE_NAME}_${RELEASE_PACKAGE_VERSION}_source.changes")
+    set(DEB_SOURCE_CHANGES "${DEB_SOURCE_CHANGES} ${SOURCE_CHANGES_FILE}")
+    execute_process(COMMAND @DEBUILD_EXECUTABLE@ -S ${DEBUILD_OPTIONS} WORKING_DIRECTORY "${DEBIAN_SOURCE_DIR}")
+
+endforeach()
+
+#### File: 'changes' list for the 'upload_debian_source_packages' target
+message(STATUS "Writing 'last.changes.lst'")
+file(WRITE "${CMAKE_CURRENT_LIST_DIR}/Debian/last.changes.lst" "${DEB_SOURCE_CHANGES}")

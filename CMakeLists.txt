@@ -13,19 +13,6 @@ else()
 endif()
 
 
-############### Setting additional variables ###############
-
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NTs OMZ CMake modules")
-set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/doc/description.txt)
-set(CPACK_PACKAGE_VENDOR      "NTs OMZ")
-set(CPACK_PACKAGE_CONTACT     "Petr Tsymbarovich <petr@tsymbarovich.ru>")
-set(WEB                       "https://github.com/mentaljam/cmake_modules")
-set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/"
-                              "/\\\\.tx/"
-                              "/\\\\.gitignore"
-                              "/\\\\CMakeLists.txt.user")
-
-
 ###################### CMake modules #######################
 
 include(CMakeParseArguments)
@@ -34,33 +21,45 @@ include(Modules/common/OMZFunctions.cmake)
 include(Modules/common/OMZVersion.cmake)
 include(Modules/common/OMZCPack.cmake)
 
-set_project_version(GIT)
+if(VERSION_MAJOR)
+    set_project_version(MAJOR ${VERSION_MAJOR}
+                        MINOR ${VERSION_MINOR}
+                        PATCH ${VERSION_PATCH}
+                        TWEAK ${VERSION_TWEAK})
+else()
+    set_project_version(GIT)
+endif()
 configure_cpack()
 
 
 #################### Packaging options #####################
 
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NTs OMZ CMake modules")
+set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/doc/description.txt)
+set(CPACK_PACKAGE_VENDOR      "NTs OMZ")
+set(CPACK_PACKAGE_CONTACT     "Petr Tsymbarovich <petr@tsymbarovich.ru>")
+set(WEB                       "https://github.com/mentaljam/OMZModules")
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/"
+                              "/\\\\.tx/"
+                              "/\\\\.gitignore"
+                              "/\\\\CMakeLists.txt.user")
+
 if(BUILD_PPA_PACKAGE)
-    set(CPACK_DEBIAN_BUILD_DEPENDS debhelper cmake
-      CACHE STRING "Common debian source build dependencies")
-    set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid wily
-      CACHE STRING "PPA distributions names")
-    set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos"
-      CACHE STRING "PPA name")
+    set(CPACK_DEBIAN_BUILD_DEPENDS debhelper cmake)
+    set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid wily)
+    set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos")
     set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
-    set(CPACK_DEBIAN_CMAKE_ARGUMENTS
-            -D${PROJECT_NAME_UPPER}_VERSION_DATE=${${PROJECT_NAME_UPPER}_VERSION_DATE})
-    set(OMZModules_PATH ${PROJECT_SOURCE_DIR})
+    set(OMZModules_PATH "${PROJECT_SOURCE_DIR}")
     include(Modules/OMZDebuildConf.cmake)
 endif()
 
 
 ########################## Install #########################
 
-configure_file(${PROJECT_NAME}Config.cmake.in
-               ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+configure_file(OMZModulesConfig.cmake.in
+               ${CMAKE_BINARY_DIR}/OMZModulesConfig.cmake
                @ONLY)
-install(FILES       ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+install(FILES       ${CMAKE_BINARY_DIR}/OMZModulesConfig.cmake
         DESTINATION ${INSTALL_PATH_CMAKE})
 install(DIRECTORY   Modules
         DESTINATION ${INSTALL_PATH_CMAKE})

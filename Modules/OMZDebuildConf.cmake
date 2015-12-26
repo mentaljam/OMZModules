@@ -40,12 +40,6 @@ if(DEBUILD_EXECUTABLE)
 
     message(STATUS "Configuring debian source package target")
 
-    #### Target file
-    set(TARGET_FILE ${CMAKE_BINARY_DIR}/BuildDebSource.cmake)
-    file(WRITE ${TARGET_FILE}
-            "############### Build debian source package ################\n\n"
-    )
-
     #### Install components
     if(CPACK_COMPONENTS_ALL_SET_BY_USER)
         set(COMPONENTS_ALL ${CPACK_COMPONENTS_ALL})
@@ -93,10 +87,10 @@ if(DEBUILD_EXECUTABLE)
 
     #### Check package revision
     if(NOT CPACK_DEBIAN_DISTRIB_REVISION)
-        set(CPACK_DEBIAN_DISTRIB_REVISION 1)
+        set(CPACK_DEBIAN_DISTRIB_REVISION 0)
     endif()
     if(NOT CPACK_DEBIAN_PACKAGE_REVISION)
-        set(CPACK_DEBIAN_PACKAGE_REVISION 1)
+        set(CPACK_DEBIAN_PACKAGE_REVISION 0)
     endif()
 
     #### Check changelog
@@ -111,7 +105,7 @@ if(DEBUILD_EXECUTABLE)
     else()
         execute_process(COMMAND date -R OUTPUT_VARIABLE BUILD_DATE)
     endif()
-    set(LAST_MODIFIED " -- ${CPACK_PACKAGE_CONTACT}  ${BUILD_DATE}")
+    set(CPACK_DEBIAN_CHANGELOG_END " -- ${CPACK_PACKAGE_CONTACT}  ${BUILD_DATE}")
 
     #### Architecture
     if(${COMPILED_ARCH} STREQUAL all)
@@ -120,254 +114,11 @@ if(DEBUILD_EXECUTABLE)
         set(ARCH any)
     endif()
 
-    #### Working directory and original sources
-    file(APPEND ${TARGET_FILE}
-            "if(EXISTS \${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake)\n"
-            "    include(\${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake)\n"
-            "else()\n"
-            "    message(FATAL_ERROR \"Need 'CPackConfig.cmake' to process\")\n"
-            "endif()\n"
-            "file(MAKE_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
-            "set(DEBIAN_SOURCE_ORIG_PATH \${CMAKE_CURRENT_LIST_DIR}/Debian/${CMAKE_PROJECT_NAME}_${${PROJECT_NAME}_VERSION})\n"
-            "if(NOT EXISTS \${DEBIAN_SOURCE_ORIG_PATH})\n"
-            "    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR} \${DEBIAN_SOURCE_ORIG_PATH}.orig)\n"
-            "    string(REPLACE \"\\\\\" \"\" IGNORING_ENTRIES \"\${CPACK_SOURCE_IGNORE_FILES}\")\n"
-            "    foreach(IGNORING_ENTRY \${IGNORING_ENTRIES})\n"
-            "        set(IGNORING_ENTRY \${DEBIAN_SOURCE_ORIG_PATH}.orig\${IGNORING_ENTRY})\n"
-            "        if(IS_DIRECTORY \${IGNORING_ENTRY})\n"
-            "            file(REMOVE_RECURSE \${IGNORING_ENTRY})\n"
-            "        else()\n"
-            "            file(GLOB IGNORING_ENTRY \${IGNORING_ENTRY}*)\n"
-            "            if(IGNORING_ENTRY)\n"
-            "                file(REMOVE \${IGNORING_ENTRY})\n"
-            "            endif()\n"
-            "        endif()\n"
-            "    endforeach()\n"
-            "endif()\n\n"
-    )
+    #### Target script file
+    configure_file("${OMZModules_PATH}/Templates/BuildDebSource.cmake.in"
+                   "${CMAKE_BINARY_DIR}/BuildDebSource.cmake" @ONLY)
 
-    #### Create the original source tar
-    file(APPEND ${TARGET_FILE}
-            "if(NOT EXISTS \${DEBIAN_SOURCE_ORIG_PATH}.orig.tar.gz)\n"
-            "    execute_process(COMMAND ${CMAKE_COMMAND} -E tar czf \${DEBIAN_SOURCE_ORIG_PATH}.orig.tar.gz \${DEBIAN_SOURCE_ORIG_PATH}.orig\n"
-            "                    WORKING_DIRECTORY \${CMAKE_CURRENT_LIST_DIR}/Debian)\n"
-            "endif()\n\n"
-    )
-
-    #### Start distributions loop
-    file(APPEND ${TARGET_FILE}
-            "foreach(DISTR \${CPACK_DEBIAN_DISTRIBUTION_NAMES})\n\n"
-            "    set(RELEASE_PACKAGE_VERSION -\${CPACK_DEBIAN_PACKAGE_REVISION}~\${DISTR}\${CPACK_DEBIAN_DISTRIB_REVISION})\n"
-            "    set(DEBIAN_SOURCE_DIR \${DEBIAN_SOURCE_ORIG_PATH}\${RELEASE_PACKAGE_VERSION})\n"
-            "    set(RELEASE_PACKAGE_VERSION ${${PROJECT_NAME}_VERSION}\${RELEASE_PACKAGE_VERSION})\n"
-            "    file(REMOVE_RECURSE \${DEBIAN_SOURCE_DIR})\n"
-            "    file(MAKE_DIRECTORY \${DEBIAN_SOURCE_DIR}/debian)\n\n"
-    )
-
-    #### File: debian/control
-    file(APPEND ${TARGET_FILE}
-            "    set(DEBIAN_CONTROL \${DEBIAN_SOURCE_DIR}/debian/control)\n"
-            "    string(REPLACE \";\" \", \" SUGGESTS \"\${CPACK_DEBIAN_BUILD_SUGGESTS}\")\n"
-            "    string(REPLACE \";\" \", \" DEPENDS \"\${CPACK_DEBIAN_TOTAL_BUILD_DEPENDS}\")\n"
-            "    file(WRITE \${DEBIAN_CONTROL}\n"
-            "           \"Source: ${CMAKE_PROJECT_NAME}\\n\"\n"
-            "           \"Section: devel\\n\"\n"
-            "           \"Priority: optional\\n\"\n"
-            "           \"Maintainer: ${CPACK_PACKAGE_CONTACT}\\n\"\n"
-            "           \"Build-Depends: \${DEPENDS}\\n\"\n"
-#            "           \"Standards-Version: 3.8.4\\n\"\n"
-            "           \"Homepage: ${WEB}\\n\\n\"\n"
-            "    )\n"
-    )
-    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
-        file(APPEND ${TARGET_FILE}
-                "    set(DEPENDS \"\\\${shlibs:Depends}\" \${CPACK_DEBIAN_PACKAGE_DEPENDS})\n"
-                "    string(REPLACE \";\" \", \" DEPENDS \"\${DEPENDS}\")\n"
-                "    file(APPEND \${DEBIAN_CONTROL}\n"
-                "            \"Package: ${CMAKE_PROJECT_NAME}\\n\"\n"
-                "            \"Architecture: ${ARCH}\\n\"\n"
-                "            \"Suggests: \${SUGGESTS}\\n\"\n"
-                "            \"Depends: \${DEPENDS}\\n\"\n"
-                "            \"Description: \${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\\n\"\n"
-                "            \"\${CPACK_DEBIAN_PACKAGE_DESCRIPTION}\\n\"\n"
-                "    )\n"
-        )
-    else()
-        file(APPEND ${TARGET_FILE}
-                "    foreach(GROUP \${CPACK_GROUPS})\n"
-                "    unset(DESCRIPTION)\n"
-                "        set(DEPENDS \"\\\${shlibs:Depends}\" \${CPACK_GROUP_\${GROUP}_DEPENDS})\n"
-                "        string(REPLACE \";\" \", \" DEPENDS \"\${DEPENDS}\")\n"
-                "        if(\${GROUP} STREQUAL ${CMAKE_PROJECT_NAME})\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME})\n"
-                "        else()\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME}-\${GROUP})\n"
-                "        endif()\n"
-                "        foreach(COMPONENT \${CPACK_GROUP_\${GROUP}_COMPONENTS})\n"
-                "            string(TOUPPER \${COMPONENT} UPPER_COMPONENT)\n"
-                "            if(CPACK_COMPONENT_\${UPPER_COMPONENT}_DISPLAY_NAME)\n"
-                "                set(DESCRIPTION \"\${DESCRIPTION} - \${CPACK_COMPONENT_\${UPPER_COMPONENT}_DISPLAY_NAME}\")\n"
-                "            else()\n"
-                "                set(DESCRIPTION \"\${DESCRIPTION} - Component '\${COMPONENT}'\")\n"
-                "            endif()\n"
-                "            if(CPACK_COMPONENT_\${UPPER_COMPONENT}_DESCRIPTION)\n"
-                "                set(DESCRIPTION \"\${DESCRIPTION} - \${CPACK_COMPONENT_\${UPPER_COMPONENT}_DESCRIPTION}\")\n"
-                "            endif()\n"
-                "            set(DESCRIPTION \"\${DESCRIPTION}\\n\")\n"
-                "        endforeach()\n"
-                "        file(APPEND \${DEBIAN_CONTROL}\n"
-                "                \"Package: \${DEB_COMPONENT}\\n\"\n"
-                "                \"Architecture: ${ARCH}\\n\"\n"
-                "                \"Suggests: \${SUGGESTS}\\n\"\n"
-                "                \"Depends: \${DEPENDS}\\n\"\n"
-                "                \"Description: \${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\\n\"\n"
-                "                \"\${CPACK_DEBIAN_PACKAGE_DESCRIPTION}\"\n"
-                "                \" This package constains:\\n\${DESCRIPTION}\\n\"\n"
-                "        )\n"
-                "    endforeach()\n\n"
-        )
-    endif()
-
-    #### File: debian/rules
-    file(APPEND ${TARGET_FILE}
-            "    set(DEBIAN_RULES \${DEBIAN_SOURCE_DIR}/debian/rules)\n"
-            "    file(WRITE \${DEBIAN_RULES}\n"
-            "            \"#!/usr/bin/make -f\\n\\n\"\n"
-            "            \"BUILDDIR = build_dir\\n\\n\"\n"
-            "            \"build:\\n\"\n"
-            "    )\n"
-            "    foreach(PREBUILD_LINE \${CPACK_DEBIAN_PREBUILD})\n"
-            "        file(APPEND \${DEBIAN_RULES}\n"
-            "            \"\t\${PREBUILD_LINE}\\n\"\n"
-            "    )\n"
-            "    endforeach()\n"
-            "    string(REPLACE \";\" \" \" CMAKE_ARGUMENTS \"\${CPACK_DEBIAN_CMAKE_ARGUMENTS}\")\n"
-            "    file(APPEND \${DEBIAN_RULES}\n"
-            "            \"\tmkdir $(BUILDDIR)\\n\"\n"
-            "            \"\tcd $(BUILDDIR); cmake \${CMAKE_ARGUMENTS} "
-                              "-DCMAKE_BUILD_TYPE=Release "
-                              "-D${PROJECT_NAME}_VERSION_MAJOR=\\\"\${${PROJECT_NAME_UPPER}_MAJOR}\\\" "
-                              "-D${PROJECT_NAME_UPPER}_MINOR=\\\"\${${PROJECT_NAME_UPPER}_MINOR}\\\" "
-                              "-D${PROJECT_NAME_UPPER}_PATCH=\\\"\${${PROJECT_NAME_UPPER}_PATCH}\\\" "
-                                                  "-DCMAKE_INSTALL_PREFIX=../debian/tmp/usr ..\\n\"\n"
-            "            \"\t$(MAKE) -C $(BUILDDIR) preinstall\\n\"\n"
-            "            \"\ttouch build\\n\\n\"\n"
-            "            \"binary: binary-indep binary-arch\\n\\n\"\n"
-            "            \"binary-indep: build\\n\\n\"\n"
-            "            \"binary-arch: build\\n\"\n"
-            "    )\n"
-    )
-    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
-        file(APPEND ${TARGET_FILE}
-                "    file(APPEND \${DEBIAN_RULES}\n"
-                "            \"\t$(MAKE) -C $(BUILDDIR) install\\n\"\n"
-                "            \"\tmkdir -p debian/tmp/DEBIAN\\n\"\n"
-                "            \"\tdpkg-gensymbols -p${CMAKE_PROJECT_NAME}\\n\"\n"
-                "    )\n"
-        )
-    else()
-        file(APPEND ${TARGET_FILE}
-                "    foreach(GROUP \${CPACK_GROUPS})\n"
-                "        if(\${GROUP} STREQUAL ${CMAKE_PROJECT_NAME})\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME})\n"
-                "        else()\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME}-\${GROUP})\n"
-                "        endif()\n"
-                "        set(PATH debian/\${DEB_COMPONENT})\n"
-                "        unset(COMPONENTS)\n"
-                "        foreach(COMPONENT \${CPACK_GROUP_\${GROUP}_COMPONENTS})\n"
-#                "            set(COMPONENTS \"\${COMPONENTS} -DCOMPONENT=\${COMPONENT} \")\n"
-                "            file(APPEND \${DEBIAN_RULES}\n"
-                "                   \"\tcd $(BUILDDIR); cmake -DCOMPONENT=\${COMPONENT} "
-                                                             "-DCMAKE_INSTALL_PREFIX=../\${PATH}/usr "
-                                                             "-P cmake_install.cmake\\n\"\n"
-                "                   \"\tmkdir -p \${PATH}/DEBIAN\\n\"\n"
-                "                   \"\tdpkg-gensymbols -p\${DEB_COMPONENT} -P\${PATH}\\n\"\n"
-                "            )\n"
-                "        endforeach()\n"
-                "    endforeach()\n"
-        )
-    endif()
-    file(APPEND ${TARGET_FILE}
-            "    file(APPEND \${DEBIAN_RULES}\n"
-            "            \"\tdh_shlibdeps\\n\"\n"
-            "            \"\tdh_strip\\n\"\n"
-            "    )\n"
-    )
-    if(NOT CPACK_DEBIAN_COMPONENT_INSTALL)
-        file(APPEND ${TARGET_FILE}
-                "    file(APPEND \${DEBIAN_RULES}\n"
-                "            \"\tdpkg-gencontrol -p${CMAKE_PROJECT_NAME}\\n\"\n"
-                "            \"\tdpkg --build debian/tmp ..\\n\"\n"
-                "    )\n"
-        )
-    else()
-        file(APPEND ${TARGET_FILE}
-                "    foreach(GROUP \${CPACK_GROUPS})\n"
-                "        if(\${GROUP} STREQUAL ${CMAKE_PROJECT_NAME})\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME})\n"
-                "        else()\n"
-                "            set(DEB_COMPONENT ${CMAKE_PROJECT_NAME}-\${GROUP})\n"
-                "        endif()\n"
-                "        set(PATH debian/\${DEB_COMPONENT})\n"
-                "        file(APPEND \${DEBIAN_RULES}\n"
-                "                \"\tdpkg-gencontrol -p\${DEB_COMPONENT} -P\${PATH} -Tdebian/\${DEB_COMPONENT}.substvars\\n\"\n"
-                "                \"\tdpkg --build \${PATH} ..\\n\"\n"
-                "        )\n"
-                "    endforeach()\n"
-        )
-    endif()
-    file(APPEND ${TARGET_FILE}
-            "    file(APPEND \${DEBIAN_RULES}\n"
-            "            \"\\nclean:\\n\"\n"
-            "            \"\trm -f build\\n\"\n"
-            "            \"\trm -rf $(BUILDDIR)\\n\\n\"\n"
-            "            \".PHONY: binary binary-arch binary-indep clean\\n\"\n"
-            "    )\n"
-            "    execute_process(COMMAND chmod +x \${DEBIAN_RULES})\n"
-    )
-
-    #### File: debian/copyright
-    file(APPEND ${TARGET_FILE}
-            "    set(DEBIAN_COPYRIGHT \${DEBIAN_SOURCE_DIR}/debian/copyright)\n"
-            "    configure_file(\${CPACK_RESOURCE_FILE_LICENSE} \${DEBIAN_COPYRIGHT} COPYONLY)\n\n"
-    )
-
-    #### File: debian/compat
-    file(APPEND ${TARGET_FILE}
-            "    file(WRITE \${DEBIAN_SOURCE_DIR}/debian/compat \"7\")\n"
-    )
-
-    #### File: debian/source/format
-    file(APPEND ${TARGET_FILE}
-            "    file(WRITE \${DEBIAN_SOURCE_DIR}/debian/source/format \"3.0 (quilt)\")\n"
-    )
-
-    #### File: debian/changelog
-    file(APPEND ${TARGET_FILE}
-            "    set(DEBIAN_CHANGELOG \${DEBIAN_SOURCE_DIR}/debian/changelog)\n"
-            "    execute_process(COMMAND \"LANG=en\" \"date\" OUTPUT_VARIABLE BUILD_DATE)\n"
-            "    file(WRITE \${DEBIAN_CHANGELOG}\n"
-            "            \"${CMAKE_PROJECT_NAME} (\${RELEASE_PACKAGE_VERSION}) \${DISTR}; urgency=low\\n\\n\"\n"
-            "            \"${CPACK_DEBIAN_CHANGELOG}\\n\\n\"\n"
-            "            \"${LAST_MODIFIED}\\n\"\n"
-            "    )\n"
-    )
-
-    #### Command: debuild -S
-    file(APPEND ${TARGET_FILE}
-            "    if(DEB_SOURCE_CHANGES OR NOT CPACK_DEBIAN_DISTRIB_REVISION EQUAL 1)\n"
-            "        set(DEBUILD_OPTIONS -sd)\n"
-            "    else()\n"
-            "        set(DEBUILD_OPTIONS -sa)\n"
-            "    endif()\n"
-            "    set(SOURCE_CHANGES_FILE ${CMAKE_PROJECT_NAME}_\${RELEASE_PACKAGE_VERSION}_source.changes)\n"
-            "    set(DEB_SOURCE_CHANGES \"\${DEB_SOURCE_CHANGES} \${SOURCE_CHANGES_FILE}\")\n"
-            "    execute_process(COMMAND ${DEBUILD_EXECUTABLE} -S \${DEBUILD_OPTIONS} WORKING_DIRECTORY \${DEBIAN_SOURCE_DIR})\n\n"
-            "endforeach()\n\n"
-            "file(WRITE \${CMAKE_CURRENT_LIST_DIR}/Debian/last.changes.lst \"\${DEB_SOURCE_CHANGES}\")\n"
-    )
-
+    #### Targets
     add_custom_target(debian_source_packages
                       COMMAND ${CMAKE_COMMAND} -P BuildDebSource.cmake
                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
