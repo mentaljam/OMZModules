@@ -19,7 +19,7 @@ include(CMakeParseArguments)
 include(Modules/common/OMZInitVars.cmake)
 include(Modules/common/OMZFunctions.cmake)
 include(Modules/common/OMZVersion.cmake)
-include(Modules/common/OMZCPack.cmake)
+include(Modules/OMZCPack.cmake)
 
 if(VERSION_MAJOR)
     set_project_version(MAJOR ${VERSION_MAJOR}
