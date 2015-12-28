@@ -11,6 +11,7 @@ if(WIN32)
 else()
     set(INSTALL_PATH_CMAKE share/${PROJECT_NAME}/cmake)
 endif()
+set(OMZModules_PATH "${PROJECT_SOURCE_DIR}")
 
 
 ###################### CMake modules #######################
@@ -51,7 +52,6 @@ if(BUILD_PPA_PACKAGE)
     set(CPACK_DEBIAN_DISTRIBUTION_NAMES vivid wily)
     set(CPACK_DEBIAN_PPA "ppa:mentaljam/amigos")
     set(CPACK_DEBIAN_CHANGELOG "  * Read on project page ${WEB}")
-    set(OMZModules_PATH "${PROJECT_SOURCE_DIR}")
     include(Modules/OMZDebuildConf.cmake)
 endif()
 

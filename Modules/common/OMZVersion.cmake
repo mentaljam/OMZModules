@@ -109,43 +109,35 @@ endfunction()
 
 function(write_version_file FILE)
 
-    #### Parsing additional definitions
+    #### Parsing additional ADDITIONAL_DEFINITIONS
     set(WRITING 0)
     foreach(ARG ${ARGN})
         if(${ARG} STREQUAL "DEFINE")
             if(NOT WRITING EQUAL 1)
                 set(WRITING 1)
-                set(DEFINITIONS "${DEFINITIONS}\n#define")
+                set(ADDITIONAL_DEFINITIONS "${ADDITIONAL_DEFINITIONS}\n#define")
             else()
                 message(FATAL_ERROR "Trying to add an empty definition")
             endif()
         else()
             if(NOT WRITING EQUAL 0)
                 set(WRITING 2)
-                set(DEFINITIONS "${DEFINITIONS} ${ARG}")
+                set(ADDITIONAL_DEFINITIONS "${ADDITIONAL_DEFINITIONS} ${ARG}")
             else()
                 message(WARNING "Unknown option '${ARG}'")
             endif()
         endif()
     endforeach()
-    if(DEFINITIONS)
-        set(DEFINITIONS "\n// Additional definitions${DEFINITIONS}\n")
+    if(ADDITIONAL_DEFINITIONS)
+        set(ADDITIONAL_DEFINITIONS "\n// Additional definitions${ADDITIONAL_DEFINITIONS}\n")
     endif()
 
+    #### Header name
+    get_filename_component(HEADER_NAME ${FILE} NAME)
+    string(TOUPPER ${HEADER_NAME} HEADER_NAME)
+    string(REGEX REPLACE "[ .-]" "_" HEADER_NAME ${HEADER_NAME})
+
     #### Writing definitions to a file
-    file(WRITE ${FILE}
-            "#ifndef VERSION_${PROJECT_NAME_UPPER}\n#define VERSION_${PROJECT_NAME_UPPER}\n\n"
-            "// ${PROJECT_NAME} version definitions\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_MAJOR  ${${PROJECT_NAME}_VERSION_MAJOR}\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_MINOR  ${${PROJECT_NAME}_VERSION_MINOR}\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_PATCH  ${${PROJECT_NAME}_VERSION_PATCH}\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_TWEAK  ${${PROJECT_NAME}_VERSION_TWEAK}\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_STRING \"${${PROJECT_NAME}_VERSION}\"\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_DATE   \"${${PROJECT_NAME}_VERSION_DATE}\"\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_OS     \"${CMAKE_SYSTEM_NAME}\"\n"
-            "#define VERSION_${PROJECT_NAME_UPPER}_ARCH   \"${COMPILED_ARCH}\"\n"
-            "${DEFINITIONS}"
-            "\n#endif // VERSION_${PROJECT_NAME_UPPER}\n"
-    )
+    configure_file(${OMZModules_PATH}/Templates/version.h.in ${FILE})
 
 endfunction()
