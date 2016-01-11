@@ -167,7 +167,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
                   "-DVERSION_MINOR=@PROJECT_VERSION_MINOR@ "
                   "-DVERSION_PATCH=@PROJECT_VERSION_PATCH@ "
                   "-DVERSION_TWEAK=@PROJECT_VERSION_TWEAK@ "
-                  "-DVERSION_DATE=@PROJECT_VERSION_DATE@"
+                  "-DVERSION_DATE=@PROJECT_VERSION_DATE@ "
                   "-DCMAKE_INSTALL_PREFIX=../debian/tmp/usr ..\n"
             "\t$(MAKE) -C $(BUILDDIR) preinstall\n"
             "\ttouch build\n\n"
