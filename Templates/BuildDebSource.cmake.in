@@ -1,5 +1,45 @@
 ############### Build debian source package ################
 
+#### Including CPackConfig.cmake
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
+else()
+    message(FATAL_ERROR "Need 'CPackConfig.cmake' to process")
+endif()
+
+#### Prepare components, components groups and total dependencies
+## Groups lists
+set(CPACK_DEBIAN_TOTAL_BUILD_DEPENDS ${CPACK_DEBIAN_BUILD_DEPENDS})
+foreach(COMPONENT ${CPACK_COMPONENTS_ALL})
+    string(TOUPPER ${COMPONENT} UPPER_COMPONENT)
+    if(NOT CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP)
+        set(CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP ${COMPONENT})
+    endif()
+    list(APPEND CPACK_GROUPS ${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP})
+    list(APPEND CPACK_GROUP_${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP}_COMPONENTS ${COMPONENT})
+    list(APPEND CPACK_GROUP_${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP}_DEPENDS
+                ${CPACK_COMPONENT_${UPPER_COMPONENT}_DEPENDS})
+    list(APPEND CPACK_DEBIAN_TOTAL_BUILD_DEPENDS ${CPACK_DEBIAN_${UPPER_COMPONENT}_BUILD_DEPENDS})
+endforeach()
+## Remove duplicates
+if(CPACK_GROUPS)
+    list(REMOVE_DUPLICATES CPACK_GROUPS)
+endif()
+list(APPEND CPACK_DEBIAN_TOTAL_BUILD_DEPENDS debhelper cmake)
+list(REMOVE_DUPLICATES CPACK_DEBIAN_TOTAL_BUILD_DEPENDS)
+## Dependencies handling: "remove depend on myself" and make new names "project-component"
+foreach(GROUP ${CPACK_GROUPS})
+    if(CPACK_GROUP_${GROUP}_DEPENDS)
+        list(REMOVE_DUPLICATES CPACK_GROUP_${GROUP}_DEPENDS)
+        list(REMOVE_ITEM CPACK_GROUP_${GROUP}_DEPENDS ${CPACK_GROUP_${GROUP}_COMPONENTS})
+        unset(NEW_DEPENDS)
+        foreach(DEPENDS ${CPACK_GROUP_${GROUP}_DEPENDS})
+            list(APPEND NEW_DEPENDS ${CPACK_PACKAGE_NAME}-${DEPENDS})
+        endforeach()
+        set(CPACK_GROUP_${GROUP}_DEPENDS ${NEW_DEPENDS})
+    endif()
+endforeach()
+
 #### Working directory and original sources
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
     include("${CMAKE_CURRENT_LIST_DIR}/CPackConfig.cmake")
@@ -84,9 +124,9 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
             foreach(COMPONENT ${CPACK_GROUP_${GROUP}_COMPONENTS})
                 string(TOUPPER ${COMPONENT} UPPER_COMPONENT)
                 if(CPACK_COMPONENT_${UPPER_COMPONENT}_DISPLAY_NAME)
-                    set(DESCRIPTION "${CPACK_COMPONENT_${UPPER_COMPONENT}_DISPLAY_NAME}")
+                    set(DESCRIPTION "${DESCRIPTION} - ${CPACK_COMPONENT_${UPPER_COMPONENT}_DISPLAY_NAME}")
                 else()
-                    set(DESCRIPTION "Component '${COMPONENT}'")
+                    set(DESCRIPTION "${DESCRIPTION} - Component '${COMPONENT}'")
                 endif()
                 if(CPACK_COMPONENT_${UPPER_COMPONENT}_DESCRIPTION)
                     set(DESCRIPTION "${DESCRIPTION} - ${CPACK_COMPONENT_${UPPER_COMPONENT}_DESCRIPTION}")
@@ -100,7 +140,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
                     "Depends: ${DEPENDS}\n"
                     "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
                     "${CPACK_DEBIAN_PACKAGE_DESCRIPTION}"
-                    " \n This package constains:\n ${DESCRIPTION}\n"
+                    " .\n This package constains:\n${DESCRIPTION}\n"
             )
         endforeach()
     endif()
@@ -127,6 +167,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
                   "-DVERSION_MINOR=@PROJECT_VERSION_MINOR@ "
                   "-DVERSION_PATCH=@PROJECT_VERSION_PATCH@ "
                   "-DVERSION_TWEAK=@PROJECT_VERSION_TWEAK@ "
+                  "-DVERSION_DATE=@PROJECT_VERSION_DATE@"
                   "-DCMAKE_INSTALL_PREFIX=../debian/tmp/usr ..\n"
             "\t$(MAKE) -C $(BUILDDIR) preinstall\n"
             "\ttouch build\n\n"

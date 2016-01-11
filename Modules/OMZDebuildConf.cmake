@@ -40,46 +40,6 @@ if(DEBUILD_EXECUTABLE)
 
     message(STATUS "Configuring debian source package target")
 
-    #### Install components
-    if(CPACK_COMPONENTS_ALL_SET_BY_USER)
-        set(COMPONENTS_ALL ${CPACK_COMPONENTS_ALL})
-    else()
-        get_cmake_property(COMPONENTS_ALL COMPONENTS)
-    endif()
-
-    #### Prepare components, components groups and total dependencies
-    ## Groups lists
-    set(CPACK_DEBIAN_TOTAL_BUILD_DEPENDS ${CPACK_DEBIAN_BUILD_DEPENDS})
-    foreach(COMPONENT ${COMPONENTS_ALL})
-        string(TOUPPER ${COMPONENT} UPPER_COMPONENT)
-        if(NOT CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP)
-            set(CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP ${COMPONENT})
-        endif()
-        list(APPEND CPACK_GROUPS ${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP})
-        list(APPEND CPACK_GROUP_${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP}_COMPONENTS ${COMPONENT})
-        list(APPEND CPACK_GROUP_${CPACK_COMPONENT_${UPPER_COMPONENT}_GROUP}_DEPENDS
-                    ${CPACK_COMPONENT_${UPPER_COMPONENT}_DEPENDS})
-        list(APPEND CPACK_DEBIAN_TOTAL_BUILD_DEPENDS ${CPACK_DEBIAN_${UPPER_COMPONENT}_BUILD_DEPENDS})
-    endforeach()
-    ## Remove duplicates
-    if(CPACK_GROUPS)
-        list(REMOVE_DUPLICATES CPACK_GROUPS)
-    endif()
-    list(APPEND CPACK_DEBIAN_TOTAL_BUILD_DEPENDS debhelper cmake)
-    list(REMOVE_DUPLICATES CPACK_DEBIAN_TOTAL_BUILD_DEPENDS)
-    ## Dependencies handling: "remove depend on myself" and make new names "project-component"
-    foreach(GROUP ${CPACK_GROUPS})
-        if(CPACK_GROUP_${GROUP}_DEPENDS)
-            list(REMOVE_DUPLICATES CPACK_GROUP_${GROUP}_DEPENDS)
-            list(REMOVE_ITEM CPACK_GROUP_${GROUP}_DEPENDS ${CPACK_GROUP_${GROUP}_COMPONENTS})
-            unset(NEW_DEPENDS)
-            foreach(DEPENDS ${CPACK_GROUP_${GROUP}_DEPENDS})
-                list(APPEND NEW_DEPENDS ${CMAKE_PROJECT_NAME}-${DEPENDS})
-            endforeach()
-            set(CPACK_GROUP_${GROUP}_DEPENDS ${NEW_DEPENDS})
-        endif()
-    endforeach()
-
     #### Check distibution names
     if(NOT CPACK_DEBIAN_DISTRIBUTION_NAMES)
         set(CPACK_DEBIAN_DISTRIBUTION_NAMES debian)
