@@ -100,7 +100,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
                     "Depends: ${DEPENDS}\n"
                     "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
                     "${CPACK_DEBIAN_PACKAGE_DESCRIPTION}"
-                    " This package constains:\n${DESCRIPTION}\n"
+                    " \n This package constains:\n ${DESCRIPTION}\n"
             )
         endforeach()
     endif()
