@@ -13,71 +13,51 @@ macro(set_qt_defenitions)
 endmacro()
 
 
-###################### Add module/app ######################
+###################### Add component #######################
 
 function(add_component NAME)
+
+    list(FIND ARGN "BUILD" BUILD_DEFINED)
 
     cmake_parse_arguments("COMPONENT"
                           "BUILD"
                           "VERSION;TYPE;DIRECTORY"
-                          "DEPENDS;EXTERNAL_DEPENDS;ADDITIONAL_SOURCES"
+                          "SOURCES;DEPENDS;EXTERNAL_DEPENDS"
                           ${ARGN})
 
-    if(COMPONENT_VERSION)
-        string(TOUPPER ${NAME} NAME_UPPER)
-        string(REGEX REPLACE "[- ]" "_" NAME_UPPER ${NAME_UPPER})
-        file(APPEND ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}_version.h
-                    "#define VERSION_${NAME_UPPER}_STRING \"${COMPONENT_VERSION}\"\n")
+    # Scan sources
+    if(COMPONENT_DIRECTORY)
+        aux_source_directory(${COMPONENT_DIRECTORY} SRC)
     endif()
 
+    # Additional sources
+    if(COMPONENT_SOURCES)
+        list(APPEND SRC ${COMPONENT_SOURCES})
+    endif()
+
+    # Check type
     if(NOT COMPONENT_TYPE)
         set(COMPONENT_TYPE "MODULE")
     endif()
 
+    # Append component to list
     list(FIND COMPONENTS ${COMPONENT_TYPE} INDEX)
     if(INDEX EQUAL -1)
         set(COMPONENTS ${COMPONENTS} ${COMPONENT_TYPE} PARENT_SCOPE)
     endif()
     set(COMPONENT_${COMPONENT_TYPE}S ${COMPONENT_${COMPONENT_TYPE}S} ${NAME} PARENT_SCOPE)
 
-    if(COMPONENT_DIRECTORY)
-        glob_sources(SRC NAME ${NAME} DIRECTORY ${COMPONENT_DIRECTORY}/${NAME})
-    else()
-        glob_sources(SRC NAME ${NAME} DIRECTORY ${NAME})
+    # Build by default
+    if(BUILD_DEFINED EQUAL -1)
+        set(COMPONENT_BUILD TRUE)
     endif()
 
-    if(COMPONENT_ADDITIONAL_SOURCES)
-        set(SRC ${SRC} ${COMPONENT_ADDITIONAL_SOURCES})
-    endif()
-
+    # Form component's variables
     set(${COMPONENT_TYPE}_${NAME}_SOURCES  ${SRC}               PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_BUILD    ${COMPONENT_BUILD}   PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_VERSION  ${COMPONENT_VERSION} PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_DEPENDS  ${COMPONENT_DEPENDS} PARENT_SCOPE)
     set(${COMPONENT_TYPE}_${NAME}_EXTERNAL_DEPENDS ${COMPONENT_EXTERNAL_DEPENDS} PARENT_SCOPE)
-
-endfunction()
-
-
-############# Glob source files for module/app #############
-
-function(glob_sources COMPONENT_SRC)
-
-    cmake_parse_arguments("COMPONENT" "" "NAME;DIRECTORY" "" ${ARGN})
-
-    if(COMPONENT_DIRECTORY)
-        set(COMPONENT_PATH ${COMPONENT_DIRECTORY})
-    else()
-        set(COMPONENT_PATH .)
-    endif()
-
-    file(GLOB SRCS ${COMPONENT_PATH}/*.cpp)
-
-    if(COMPONENT_NAME AND EXISTS ${COMPONENT_PATH}/${COMPONENT_NAME}.h)
-        set(SRCS ${SRCS} ${COMPONENT_PATH}/${COMPONENT_NAME}.h)
-    endif()
-
-    set(${COMPONENT_SRC} ${SRCS} PARENT_SCOPE)
 
 endfunction()
 
