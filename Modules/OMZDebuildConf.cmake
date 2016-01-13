@@ -68,10 +68,10 @@ if(DEBUILD_EXECUTABLE)
     set(CPACK_DEBIAN_CHANGELOG_END " -- ${CPACK_PACKAGE_CONTACT}  ${BUILD_DATE}")
 
     #### Architecture
-    if(${COMPILED_ARCH} STREQUAL all)
-        set(ARCH all)
+    if(${COMPILED_ARCH} STREQUAL "all")
+        set(CPACK_DEBIAN_ARCH "all")
     else()
-        set(ARCH any)
+        set(CPACK_DEBIAN_ARCH "any")
     endif()
 
     #### Target script file

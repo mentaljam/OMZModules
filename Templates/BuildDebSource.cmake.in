@@ -105,7 +105,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
         string(REPLACE ";" ", " DEPENDS "${DEPENDS}")
         file(APPEND ${DEBIAN_CONTROL}
                 "Package: ${CPACK_PACKAGE_NAME}\n"
-                "Architecture: @COMPILED_ARCH@\n"
+                "Architecture: @CPACK_DEBIAN_ARCH@\n"
                 "Suggests: ${SUGGESTS}\n"
                 "Depends: ${DEPENDS}\n"
                 "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
@@ -135,7 +135,7 @@ foreach(DISTR ${CPACK_DEBIAN_DISTRIBUTION_NAMES})
             endforeach()
             file(APPEND ${DEBIAN_CONTROL}
                     "Package: ${DEB_COMPONENT}\n"
-                    "Architecture: @COMPILED_ARCH@\n"
+                    "Architecture: @CPACK_DEBIAN_ARCH@\n"
                     "Suggests: ${SUGGESTS}\n"
                     "Depends: ${DEPENDS}\n"
                     "Description: ${CPACK_PACKAGE_DESCRIPTION_SUMMARY}\n"
