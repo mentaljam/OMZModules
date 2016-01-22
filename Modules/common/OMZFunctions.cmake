@@ -13,55 +13,6 @@ macro(set_qt_defenitions)
 endmacro()
 
 
-###################### Add component #######################
-
-function(add_component NAME)
-
-    list(FIND ARGN "BUILD" BUILD_DEFINED)
-
-    cmake_parse_arguments("COMPONENT"
-                          "BUILD"
-                          "VERSION;TYPE;DIRECTORY"
-                          "SOURCES;DEPENDS;EXTERNAL_DEPENDS"
-                          ${ARGN})
-
-    # Scan sources
-    if(COMPONENT_DIRECTORY)
-        aux_source_directory(${COMPONENT_DIRECTORY} SRC)
-    endif()
-
-    # Additional sources
-    if(COMPONENT_SOURCES)
-        list(APPEND SRC ${COMPONENT_SOURCES})
-    endif()
-
-    # Check type
-    if(NOT COMPONENT_TYPE)
-        set(COMPONENT_TYPE "MODULE")
-    endif()
-
-    # Append component to list
-    list(FIND COMPONENTS ${COMPONENT_TYPE} INDEX)
-    if(INDEX EQUAL -1)
-        set(COMPONENTS ${COMPONENTS} ${COMPONENT_TYPE} PARENT_SCOPE)
-    endif()
-    set(COMPONENT_${COMPONENT_TYPE}S ${COMPONENT_${COMPONENT_TYPE}S} ${NAME} PARENT_SCOPE)
-
-    # Build by default
-    if(BUILD_DEFINED EQUAL -1)
-        set(COMPONENT_BUILD TRUE)
-    endif()
-
-    # Form component's variables
-    set(${COMPONENT_TYPE}_${NAME}_SOURCES  ${SRC}               PARENT_SCOPE)
-    set(${COMPONENT_TYPE}_${NAME}_BUILD    ${COMPONENT_BUILD}   PARENT_SCOPE)
-    set(${COMPONENT_TYPE}_${NAME}_VERSION  ${COMPONENT_VERSION} PARENT_SCOPE)
-    set(${COMPONENT_TYPE}_${NAME}_DEPENDS  ${COMPONENT_DEPENDS} PARENT_SCOPE)
-    set(${COMPONENT_TYPE}_${NAME}_EXTERNAL_DEPENDS ${COMPONENT_EXTERNAL_DEPENDS} PARENT_SCOPE)
-
-endfunction()
-
-
 ############# Remove C/CPP comments from file ##############
 
 function(remove_comments SRC_FILE DST_FILE)
