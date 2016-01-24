@@ -12,8 +12,7 @@ endif()
 
 add_custom_target(build_docs
                   COMMENT "${PROJECT_NAME} documentation"
-                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 if(DOXYGEN_FOUND)
 
@@ -32,7 +31,8 @@ if(DOXYGEN_FOUND)
                             OUTPUT_DIRECTORY OUTPUT_LANGUAGE
                             HTML_EXTRA_STYLESHEET
                             CHM_FILE CHM_INDEX_ENCODING
-                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_CUST_FILTER_NAME QHP_CUST_FILTER_ATTRS QHP_SECT_FILTER_ATTRS)
+                            QCH_FILE QHP_NAMESPACE QHP_VIRTUAL_FOLDER QHP_CUST_FILTER_NAME QHP_CUST_FILTER_ATTRS QHP_SECT_FILTER_ATTRS
+                            MAN_EXTENSION)
     # Multi
     set(DOXY_OPTIONS_MULTI  INPUT FILE_PATTERNS EXCLUDE_PATTERNS)
 
@@ -41,8 +41,7 @@ else(DOXYGEN_FOUND)
     message(WARNING "Doxygen not found - Documentation will not be created")
 
     add_custom_command(TARGET build_docs
-                       COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "No doxygen executable was found, skipping..."
-    )
+                       COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "No doxygen executable was found, skipping...")
 
 endif()
 
@@ -74,8 +73,7 @@ function(doxy_add_target)
                           "HTMLHELP;QHP;PDF;${DOXY_OPTIONS_BOOL}"
                           "${DOXY_OPTIONS_SINGLE}"
                           "FORMATS;${DOXY_OPTIONS_MULTI}"
-                          ${ARGN}
-    )
+                          ${ARGN})
     if(DOXY_UNPARSED_ARGUMENTS)
         foreach(ARG ${DOXY_UNPARSED_ARGUMENTS})
             message(AUTHOR_WARNING "Unknown argument '${ARG}'")
@@ -176,8 +174,7 @@ function(doxy_add_target)
                                    COMMAND ${CMAKE_COMMAND} -E copy ${DOXY_OUTPUT_DIRECTORY}/latex/refman.pdf
                                                                     ${DOXY_OUTPUT_DIRECTORY}/${DOXY_NAME_FIX_LOWER}.pdf
                                    COMMENT "Generating documentation in PDF"
-                                   VERBATIM
-                )
+                                   VERBATIM)
             elseif()
                 message(WARNING "'pdflatex' not found - PDF documentation will not be created")
             endif()
@@ -242,8 +239,7 @@ function(doxy_add_target)
     #### Adding command
     add_custom_command(TARGET build_docs
                        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXY_CONF_OUT}
-                       COMMENT "Generating doxygen output"
-    )
+                       COMMENT "Generating doxygen output")
 
     set(GENERATED_FILES ${GENERATED_FILES} ${DOXY_OUTPUT_DIRECTORY} PARENT_SCOPE)
 
@@ -273,24 +269,20 @@ function(doxy_generate_qhc DOXY_QHC_FILE DOXY_QCH_LIST)
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<QHelpCollectionProject version=\"1.0\">\n"
         "    <docFiles>\n"
-        "        <register>\n"
-    )
+        "        <register>\n")
     foreach(QCH ${DOXY_QCH_LIST})
         file(APPEND ${DOXY_QHC_FILE}p
-            "            <file>${QCH}</file>\n"
-        )
+            "            <file>${QCH}</file>\n")
     endforeach()
     file(APPEND ${DOXY_QHC_FILE}p
         "        </register>\n"
         "    </docFiles>\n"
-        "</QHelpCollectionProject>\n"
-    )
+        "</QHelpCollectionProject>\n")
 
     #### Adding command to generate QHC file
     add_custom_command(TARGET build_docs
                        COMMAND ${QCOLGEN_EXECUTABLE} ${DOXY_QHC_FILE}p -o ${DOXY_QHC_FILE}
-                       COMMENT "Generating Qt collection output"
-    )
+                       COMMENT "Generating Qt collection output")
 
 endfunction()
 
