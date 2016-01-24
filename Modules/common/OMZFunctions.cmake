@@ -241,3 +241,39 @@ macro(postconfig)
     set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}")
 
 endmacro()
+
+
+###################### Windows RC file #####################
+
+function(configure_rcfile FILE)
+
+    cmake_parse_arguments("IDI" "" "ICON" "" ${ARGN})
+    cmake_parse_arguments("RC"  "" "VERSION" "" ${ARGN})
+    cmake_parse_arguments("VER" ""
+                          "COMPANYNAME_STR;FILEDESCRIPTION_STR;FILEVERSION;PRODUCTVERSION;\
+INTERNALNAME_STR;LEGALCOPYRIGHT_STR;ORIGINALFILENAME_STR;PRODUCTNAME_STR"
+                          "" ${ARGN})
+
+    # Checking icons
+    if(IDI_ICON)
+        set(IDI_ICON "IDI_ICON1 ICON DISCARDABLE \"${IDI_ICON}\"\n")
+    endif()
+
+    # Checking versions
+    if(NOT RC_VERSION)
+        set(RC_VERSION ${PROJECT_VERSION})
+    endif()
+    string(REGEX REPLACE "[.-]" "," RC_VERSION ${RC_VERSION})
+    set(VER_FILEVERSION_STR    ${VER_FILEVERSION})
+    set(VER_PRODUCTVERSION_STR ${VER_PRODUCTVERSION})
+    if(VER_FILEVERSION)
+        string(REGEX REPLACE "[.-]" "," VER_FILEVERSION ${VER_FILEVERSION})
+    endif()
+    if(VER_PRODUCTVERSION)
+        string(REGEX REPLACE "[.-]" "," VER_PRODUCTVERSION ${VER_PRODUCTVERSION})
+    endif()
+
+    configure_file("${OMZModules_PATH}/Templates/windows.rc.in"
+                   "${FILE}")
+
+endfunction()
