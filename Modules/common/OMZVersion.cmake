@@ -38,7 +38,7 @@ function(set_project_version)
                     list(GET VERSION 2 VERSION_PATCH)
                 endif()
             else()
-                message(STATUS "Unknown git tag format, expected something like 'v1.0-10'")
+                message(WARNING "Unknown git tag format, expected something like 'v1.0-10'")
             endif()
 
         else()
