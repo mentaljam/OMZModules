@@ -250,8 +250,8 @@ function(configure_rcfile FILE)
     cmake_parse_arguments("IDI" "" "ICON" "" ${ARGN})
     cmake_parse_arguments("RC"  "" "VERSION" "" ${ARGN})
     cmake_parse_arguments("VER" ""
-                          "COMPANYNAME_STR;FILEDESCRIPTION_STR;FILEVERSION;PRODUCTVERSION;\
-INTERNALNAME_STR;LEGALCOPYRIGHT_STR;ORIGINALFILENAME_STR;PRODUCTNAME_STR"
+                          "COMPANYNAME;FILEDESCRIPTION;FILEVERSION;PRODUCTVERSION;\
+INTERNALNAME;LEGALCOPYRIGHT;ORIGINALFILENAME;PRODUCTNAME"
                           "" ${ARGN})
 
     # Checking icons
@@ -261,17 +261,17 @@ INTERNALNAME_STR;LEGALCOPYRIGHT_STR;ORIGINALFILENAME_STR;PRODUCTNAME_STR"
 
     # Checking versions
     if(NOT RC_VERSION)
-        set(RC_VERSION ${PROJECT_VERSION})
+        set(RC_VERSION  ${PROJECT_VERSION})
     endif()
-    string(REGEX REPLACE "[.-]" "," RC_VERSION ${RC_VERSION})
-    set(VER_FILEVERSION_STR    ${VER_FILEVERSION})
-    set(VER_PRODUCTVERSION_STR ${VER_PRODUCTVERSION})
-    if(VER_FILEVERSION)
-        string(REGEX REPLACE "[.-]" "," VER_FILEVERSION ${VER_FILEVERSION})
+    if(NOT VER_FILEVERSION)
+        set(VER_FILEVERSION_STR    ${RC_VERSION})
     endif()
-    if(VER_PRODUCTVERSION)
-        string(REGEX REPLACE "[.-]" "," VER_PRODUCTVERSION ${VER_PRODUCTVERSION})
+    if(NOT VER_PRODUCTVERSION)
+        set(VER_PRODUCTVERSION_STR ${RC_VERSION})
     endif()
+    string(REGEX REPLACE "[.-]" "," RC_VERSION         ${RC_VERSION})
+    string(REGEX REPLACE "[.-]" "," VER_FILEVERSION    ${VER_FILEVERSION_STR})
+    string(REGEX REPLACE "[.-]" "," VER_PRODUCTVERSION ${VER_PRODUCTVERSION_STR})
 
     configure_file("${OMZModules_PATH}/Templates/windows.rc.in"
                    "${FILE}")
