@@ -1,3 +1,34 @@
+################### Find git if not set ############$#######
+
+if(NOT GIT_EXECUTABLE)
+    unset(GIT_EXECUTABLE CACHE)
+    find_program(GIT_EXECUTABLE git)
+endif()
+
+
+################### Add changelog target ###################
+
+if(GIT_EXECUTABLE AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+
+    #### Get the last tag name
+    execute_process(COMMAND           "${GIT_EXECUTABLE}" describe --abbrev=0 --tags
+                    OUTPUT_VARIABLE   LAST_TAG
+                    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+    #### Strip the tag name
+    string(STRIP ${LAST_TAG} LAST_TAG)
+
+    #### Print log
+    add_custom_target(print_last_changes
+                      COMMAND           "${GIT_EXECUTABLE}" log "${LAST_TAG}.." "--pretty=  - %s"
+                      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                      COMMENT "Changes from the '${LAST_TAG}' tag:")
+
+    message(STATUS "Run 'make print_last_changes' to print formatted git log from the last tag")
+
+endif()
+
+
 ################## Write versions to cache #################
 
 function(set_project_version)
@@ -8,10 +39,6 @@ function(set_project_version)
     #### Reading
     if(VERSION_GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
 
-        if(NOT GIT_EXECUTABLE)
-            unset(GIT_EXECUTABLE CACHE)
-            find_program(GIT_EXECUTABLE git)
-        endif()
         if(GIT_EXECUTABLE)
 
             execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} describe --tags --always
