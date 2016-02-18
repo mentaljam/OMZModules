@@ -70,11 +70,25 @@ function(read_debian_description)
 endfunction()
 
 
-################## Build Windows ICO files #################
+############## Convert (Imagemagick) Function ##############
 
-function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
+function(imagemagick_convert OUTPUT_EXT OUTPUT_VAR INPUT_FILES)
     if(CONVERT_EXECUTABLE)
-        foreach(INPUT ${${INPUT_SVG_VAR}})
+        cmake_parse_arguments("OUTPUT" "" "" "RESIZE" ${ARGN})
+        # Form 'resize' argument
+        list(LENGTH OUTPUT_RESIZE OUTPUT_RESIZE_COUNT)
+        if(${OUTPUT_RESIZE_COUNT} GREATER 0)
+            if(${OUTPUT_EXT} STREQUAL "ico")
+                foreach(SIZE ${OUTPUT_RESIZE})
+                    list(APPEND RESIZE_ARGUMENT "(" -clone 0 -resize ${SIZE} ")")
+                endforeach()
+            else()
+                list(GET OUTPUT_RESIZE 0 SIZE)
+                set(RESIZE_ARGUMENT -resize ${SIZE})
+            endif()
+        endif()
+        # Generating commands
+        foreach(INPUT ${INPUT_FILES})
             get_filename_component(FILE_NAME ${INPUT} NAME_WE)
             get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
             if(LOCATION)
@@ -82,48 +96,19 @@ function(convert_ico INPUT_SVG_VAR OUTPUT_ICO_VAR)
             else()
                 set(LOCATION "${CMAKE_CURRENT_BINARY_DIR}")
             endif()
-            set(OUTPUT ${LOCATION}/${FILE_NAME}.ico)
-            list(APPEND OUTPUT_ICO ${OUTPUT})
+            set(OUTPUT ${LOCATION}/${FILE_NAME}.${OUTPUT_EXT})
+            list(APPEND OUTPUT_FILES ${OUTPUT})
             add_custom_command(OUTPUT ${OUTPUT}
-                               COMMAND ${CONVERT_EXECUTABLE} -background none -quantize transparent ${INPUT}
-                                       ( -clone 0 -resize 256 )
-#                                       ( -clone 0 -resize 96 )
-                                       ( -clone 0 -resize 48 )
-                                       ( -clone 0 -resize 32 )
-                                       ( -clone 0 -resize 16 )
-                                       -background none -quantize transparent ${OUTPUT}
+                               COMMAND ${CONVERT_EXECUTABLE}
+                                       -background none -quantize transparent ${INPUT}
+                                       ${RESIZE_ARGUMENT} ${OUTPUT}
                                WORKING_DIRECTORY ${LOCATION}
-                               COMMENT "Generating ${FILE_NAME}.ico")
+                               COMMENT "Generating ${FILE_NAME}.${OUTPUT_EXT}")
         endforeach()
-        set(${OUTPUT_ICO_VAR} ${OUTPUT_ICO} PARENT_SCOPE)
+        set(${OUTPUT_VAR} ${OUTPUT_FILES} PARENT_SCOPE)
     else()
-        message(AUTHOR_WARNING "To build ICO files You must set the CONVERT_EXECUTABLE path variable")
-    endif()
-endfunction()
-
-
-###################### Build PNG files #####################
-
-function(convert_png INPUT_SVG_VAR OUTPUT_PNG_VAR)
-    if(CONVERT_EXECUTABLE)
-        foreach(INPUT ${${INPUT_SVG_VAR}})
-            get_filename_component(FILE_NAME ${INPUT} NAME_WE)
-            get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
-            if(LOCATION)
-                file(MAKE_DIRECTORY "${LOCATION}")
-            else()
-                set(LOCATION "${CMAKE_CURRENT_BINARY_DIR}")
-            endif()
-            set(OUTPUT ${LOCATION}/${FILE_NAME}.png)
-            list(APPEND OUTPUT_PNG ${OUTPUT})
-            add_custom_command(OUTPUT ${OUTPUT}
-                               COMMAND ${CONVERT_EXECUTABLE} -background none -quantize transparent ${INPUT} ${OUTPUT}
-                               WORKING_DIRECTORY ${LOCATION}
-                               COMMENT "Generating ${FILE_NAME}.png")
-        endforeach()
-        set(${OUTPUT_PNG_VAR} ${OUTPUT_PNG} PARENT_SCOPE)
-    else()
-        message(AUTHOR_WARNING "To build PNG files You must set the CONVERT_EXECUTABLE path variable")
+        message(AUTHOR_WARNING
+            "To the convert executable is not found. Set the 'CONVERT_EXECUTABLE' path variable")
     endif()
 endfunction()
 
