@@ -1,18 +1,3 @@
-#################### Set Qt defenitions ####################
-
-macro(set_qt_defenitions)
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_definitions(-DQT_NO_DEBUG)
-        add_definitions(-DQT_NO_DEBUG_OUTPUT)
-        add_definitions(-DQT_NO_WARNING)
-        add_definitions(-DQT_NO_WARNING_OUTPUT)
-        if(CMAKE_COMPILER_IS_GNUCC AND WIN32)
-            set(GCC_FLAGS "${GCC_FLAGS} -mwindows")
-        endif()
-    endif()
-endmacro()
-
-
 ############# Remove C/CPP comments from file ##############
 
 function(remove_comments SRC_FILE DST_FILE)
@@ -65,103 +50,48 @@ function(read_debian_description)
         endforeach()
         set(CPACK_DEBIAN_PACKAGE_DESCRIPTION ${CPACK_DEBIAN_PACKAGE_DESCRIPTION} PARENT_SCOPE)
     else()
-        message(AUTHOR_WARNING "Description file '${INPUT_FILE}' does not exists")
-    endif()
-endfunction()
-
-
-############## Convert (Imagemagick) Function ##############
-
-function(imagemagick_convert OUTPUT_EXT OUTPUT_VAR INPUT_FILES)
-    if(CONVERT_EXECUTABLE)
-        cmake_parse_arguments("OUTPUT" "" "" "RESIZE" ${ARGN})
-        # Form 'resize' argument
-        list(LENGTH OUTPUT_RESIZE OUTPUT_RESIZE_COUNT)
-        if(${OUTPUT_RESIZE_COUNT} GREATER 0)
-            if(${OUTPUT_EXT} STREQUAL "ico")
-                foreach(SIZE ${OUTPUT_RESIZE})
-                    list(APPEND RESIZE_ARGUMENT "(" -clone 0 -resize ${SIZE} ")")
-                endforeach()
-            else()
-                list(GET OUTPUT_RESIZE 0 SIZE)
-                set(RESIZE_ARGUMENT -resize ${SIZE})
-            endif()
-        endif()
-        # Generating commands
-        foreach(INPUT ${INPUT_FILES})
-            get_filename_component(FILE_NAME ${INPUT} NAME_WE)
-            get_source_file_property(LOCATION ${INPUT} OUTPUT_LOCATION)
-            if(LOCATION)
-                file(MAKE_DIRECTORY "${LOCATION}")
-            else()
-                set(LOCATION "${CMAKE_CURRENT_BINARY_DIR}")
-            endif()
-            set(OUTPUT ${LOCATION}/${FILE_NAME}.${OUTPUT_EXT})
-            list(APPEND OUTPUT_FILES ${OUTPUT})
-            add_custom_command(OUTPUT ${OUTPUT}
-                               COMMAND ${CONVERT_EXECUTABLE}
-                                       -background none -quantize transparent ${INPUT}
-                                       ${RESIZE_ARGUMENT} ${OUTPUT}
-                               WORKING_DIRECTORY ${LOCATION}
-                               COMMENT "Generating ${FILE_NAME}.${OUTPUT_EXT}")
-        endforeach()
-        set(${OUTPUT_VAR} ${OUTPUT_FILES} PARENT_SCOPE)
-    else()
-        message(AUTHOR_WARNING
-            "To the convert executable is not found. Set the 'CONVERT_EXECUTABLE' path variable")
+        message(WARNING "Description file '${INPUT_FILE}' does not exist")
     endif()
 endfunction()
 
 
 ###################### Get definitions #####################
 
-function(get_defenition HEADER DEFENITION OUTPUT_VARIABLE)
+function(get_defenition HEADER DEFENITION INCLUDE_DIRECTORIES OUTPUT_VARIABLE)
 
-    set(WORKING_DIR ${CMAKE_BINARY_DIR}/tmp)
-    string(REGEX REPLACE "[\\\\]\\\\[!\\\"#$%&'()*+,:;<=>?@\\\\^`{|}~]" "_" FILE_NAME ${OUTPUT_VARIABLE})
-    set(LOG_FILE ${WORKING_DIR}/${FILE_NAME}.log)
-    set(SOURCE ${WORKING_DIR}/${FILE_NAME}.c)
-    set(BINARY ${WORKING_DIR}/${FILE_NAME})
-    if(WIN32)
-        set(BINARY ${BINARY}.exe)
-    endif()
+    if(NOT DEFINED ${OUTPUT_VARIABLE})
 
-    file(MAKE_DIRECTORY ${WORKING_DIR})
-    file(WRITE ${SOURCE}
-            "#include <stdio.h>\n"
-            "#include <${HEADER}>\n"
-            "int main() {\n"
-            "   printf(${DEFENITION});\n"
-            "   return 0;\n"
-            "}\n"
-    )
+        message(STATUS "Get ${DEFENITION} from ${HEADER}")
 
-    get_property(I_DIRS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-    foreach(DIR ${I_DIRS})
-        list(APPEND I_ARG "-I${DIR}")
-    endforeach()
+        set(WORKING_DIR "${CMAKE_BINARY_DIR}")
+        string(REGEX REPLACE "[\\\\]\\\\[!\\\"#$%&'()*+,:;<=>?@\\\\^`{|}~]" "_" FILE_NAME ${OUTPUT_VARIABLE})
+        set(SOURCE "${WORKING_DIR}/${FILE_NAME}.c")
+        if(INCLUDE_DIRECTORIES)
+            set(CMAKE_FLAGS CMAKE_FLAGS -DINCLUDE_DIRECTORIES=${INCLUDE_DIRECTORIES})
+        endif()
 
-    if(CMAKE_COMPILER_IS_GNUCC)
-        set(COMMAND_STR -fPIC ${SOURCE} ${I_ARG} -o ${BINARY})
-    elseif(MSVC)
-        set(COMMAND_STR ${SOURCE} ${I_ARG} -Fe${BINARY})
-    else()
-        message(WARNING "Unsupported compiler")
-    endif()
+        file(WRITE "${SOURCE}" "\
+#include <stdio.h>
+#include <${HEADER}>
+int main()
+{
+    printf(${DEFENITION});
+    return 0;
+}")
 
-    if(COMMAND_STR)
-        execute_process(COMMAND ${CMAKE_CXX_COMPILER} ${COMMAND_STR}
-                        OUTPUT_FILE    ${LOG_FILE}
-                        ERROR_FILE     ${LOG_FILE}
-                        ERROR_VARIABLE ERROR_VAR)
-    endif()
+        try_run(RUN_RESULT COMPILE_RESULT
+            "${WORKING_DIR}" "${SOURCE}"
+            ${CMAKE_FLAGS}
+            RUN_OUTPUT_VARIABLE RUN_OUTPUT)
 
-    if(NOT ERROR_VAR)
-        execute_process(COMMAND ${BINARY} OUTPUT_VARIABLE ${OUTPUT_VARIABLE})
-        set(${OUTPUT_VARIABLE} ${${OUTPUT_VARIABLE}} PARENT_SCOPE)
-    else()
-        message(WARNING "Error retrieving defenition '${DEFENITION}'. Read '${ERROR_FILE}' for more details.")
-        set(NOT_DELETE_TMP TRUE)
+        if(RUN_RESULT EQUAL 0 AND COMPILE_RESULT)
+            message(STATUS "Get ${DEFENITION} from ${HEADER} - \"${RUN_OUTPUT}\"")
+        else()
+            message(STATUS "Get ${DEFENITION} from ${HEADER} - failed")
+        endif()
+
+        set(${OUTPUT_VARIABLE} ${RUN_OUTPUT} CACHE STRING "${DEFENITION} definition from ${HEADER}")
+
     endif()
 
 endfunction()
@@ -169,63 +99,42 @@ endfunction()
 
 ########## Combine license files to a single one ###########
 
-function(generate_single_license OUTPUT_FILE)
+function(configure_single_license_file OUTPUT_FILE)
 
-    cmake_parse_arguments("INPUT" "FILES" "" "" ${ARGN})
+    if(NOT EXISTS "${OUTPUT_FILE}")
 
-    ## Find license files if not provided
-    if(NOT INPUT_FILES)
-        file(GLOB INPUT_FILES RELATIVE ${CMAKE_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/*license*)
-        if(NOT INPUT_FILES)
-            message(WARNING "No license files found")
+        cmake_parse_arguments("INPUT" "" "" "FILE" ${ARGN})
+
+        if(NOT INPUT_FILE)
+            message(FATAL_ERROR "No license files provided")
             return()
         endif()
-        message(STATUS "Combining license files from the project source directory")
-        ## Move the main license file to the first position
-        list(LENGTH INPUT_FILES LIST_LENGTH)
-        if(LIST_LENGTH GREATER 1)
-            foreach(FILE ${INPUT_FILES})
-                if(FILE MATCHES ".*${CMAKE_PROJECT_NAME}.*")
-                    list(REMOVE_ITEM INPUT_FILES ${FILE})
-                    set(INPUT_FILES ${FILE} ${INPUT_FILES})
-                    break()
-                endif()
-            endforeach()
-        endif()
-    endif()
 
-    ## Write the combined file
-    file(WRITE ${OUTPUT_FILE} "Contents:\n")
-    set(IND 1)
-    foreach(FILE ${INPUT_FILES})
-        file(READ ${FILE} LICENSE_TEXT)
-        string(REPLACE ".txt" "" FILE ${FILE})
-        string(REGEX REPLACE "(?i)license[._ ]" "" FILE ${FILE})
-        file(APPEND ${OUTPUT_FILE} "${IND}) ${FILE}\n")
-        set(FULL_LICENSE_TEXT "${FULL_LICENSE_TEXT}${IND}) ${FILE} license:\n${LICENSE_TEXT}\n\n")
-        math(EXPR IND "${IND} + 1")
-    endforeach()
-    file(APPEND ${OUTPUT_FILE} "\n\n${FULL_LICENSE_TEXT}")
+        list(LENGTH INPUT_FILE INPUT_FILE_LENGTH)
+        math(EXPR INPUT_FILE_ARE_ODD "${INPUT_FILE_LENGTH} % 2")
+        if(INPUT_FILE_ARE_ODD)
+            message(FATAL_ERROR "Input must be 'FILE <caption> <file>'")
+        endif()
+        math(EXPR INPUT_FILE_LENGTH "${INPUT_FILE_LENGTH} / 2")
+
+        set(IND 1)
+        set(CAPTION_IND 0)
+        set(FILE_IND 1)
+        while(NOT IND GREATER INPUT_FILE_LENGTH)
+            list(GET INPUT_FILE ${CAPTION_IND} CAPTION)
+            list(GET INPUT_FILE ${FILE_IND} FILE)
+            file(READ "${FILE}" LICENSE_TEXT)
+            set(CONTENTS "${CONTENTS}${IND}) ${CAPTION}\n")
+            set(FULL_LICENSE_TEXT "${FULL_LICENSE_TEXT}${IND}) ${CAPTION}:\n${LICENSE_TEXT}\n\n")
+            math(EXPR IND "${IND} + 1")
+            math(EXPR CAPTION_IND "${CAPTION_IND} + 2")
+            math(EXPR FILE_IND "${FILE_IND} + 2")
+        endwhile()
+        file(WRITE ${OUTPUT_FILE} "Contents:\n${CONTENTS}\n\n${FULL_LICENSE_TEXT}")
+
+    endif()
 
 endfunction()
-
-
-##################### Postconfiguration ####################
-
-macro(postconfig)
-
-    #### Project Files
-    add_custom_target(project_files
-                      COMMENT "Project files"
-                      SOURCES ${PROJECT_FILES})
-
-    #### Generated Files
-    if(NOT NOT_DELETE_TMP)
-        file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/tmp)
-    endif()
-    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}")
-
-endmacro()
 
 
 ###################### Windows RC file #####################
