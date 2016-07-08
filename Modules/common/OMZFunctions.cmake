@@ -84,6 +84,8 @@ int main()
             ${CMAKE_FLAGS}
             RUN_OUTPUT_VARIABLE RUN_OUTPUT)
 
+        file(REMOVE "${SOURCE}")
+
         if(RUN_RESULT EQUAL 0 AND COMPILE_RESULT)
             message(STATUS "Get ${DEFENITION} from ${HEADER} - \"${RUN_OUTPUT}\"")
         else()
