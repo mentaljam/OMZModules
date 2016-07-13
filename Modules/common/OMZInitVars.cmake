@@ -16,7 +16,9 @@ macro(omz_init_vars)
     if(${PROJECT_NAME_UPPER}_LANGUAGES STREQUAL "NONE")
         message(STATUS "Configuring architecture independent version")
         set(TARGET_ARCHITECTURE all)
-    elseif(CMAKE_SIZEOF_VOID_P MATCHES 8)
+    elseif(CMAKE_SIZEOF_VOID_P MATCHES 8 AND
+            NOT "-m32" IN_LIST CMAKE_C_FLAGS AND
+            NOT "-m32" IN_LIST CMAKE_CXX_FLAGS)
         message(STATUS "Configuring 64 bit version")
         set(TARGET_ARCHITECTURE amd64)
     else()
