@@ -29,7 +29,8 @@ function(configure_doxy_file CONFIGURATION_FILE)
     set(DOXY_OPTIONS_BOOL
         RECURSIVE
         DISABLE_INDEX
-        SEARCHENGINE)
+        SEARCHENGINE
+        QUIET)
     # Single options
     set(DOXY_OPTIONS_SINGLE
         IMAGE_PATH
@@ -43,12 +44,14 @@ function(configure_doxy_file CONFIGURATION_FILE)
         HTML_EXTRA_STYLESHEET
         CHM_FILE
         CHM_INDEX_ENCODING
+        HHC_LOCATION
         QCH_FILE
         QHP_NAMESPACE
         QHP_VIRTUAL_FOLDER
         QHP_CUST_FILTER_NAME
         QHP_CUST_FILTER_ATTRS
         QHP_SECT_FILTER_ATTRS
+        QHG_LOCATION
         MAN_EXTENSION)
     # Multi options
     set(DOXY_OPTIONS_MULTI
@@ -102,11 +105,11 @@ function(configure_doxy_file CONFIGURATION_FILE)
         if(NOT CHM_FILE)
             message(CRITICAL "HTMLHELP is enabled but CHM_FILE is not set")
         endif()
-        if(NOT HHC_EXECUTABLE)
-            find_program(HHC_EXECUTABLE "hhc")
-            if(NOT HHC_EXECUTABLE)
+        if(NOT DOXY_HHC_LOCATION)
+            find_program(DOXY_HHC_LOCATION "hhc")
+            if(NOT DOXY_HHC_LOCATION)
                 message(WARNING "HHC executable was not found")
-                set(HHC_EXECUTABLE "hhc.exe" CACHE PATH "HHC executable" FORCE)
+                set(DOXY_HHC_LOCATION "hhc.exe" CACHE PATH "HHC executable" FORCE)
             endif()
         endif()
         list(APPEND DOXY_FORMATS "html" "htmlhelp")
@@ -118,21 +121,21 @@ function(configure_doxy_file CONFIGURATION_FILE)
 
     # QHP
     if("QHP" IN_LIST DOXY_FORMATS)
-        if(NOT QCH_FILE)
+        if(NOT DOXY_QCH_FILE)
             message(CRITICAL "QHP is enabled but QCH_FILE is not set")
         endif()
-        if(NOT QHG_EXECUTABLE)
-            find_program(QHG_EXECUTABLE "qhelpgenerator")
-            if(NOT QHG_EXECUTABLE)
+        if(NOT DOXY_QHG_LOCATION)
+            find_program(DOXY_QHG_LOCATION "qhelpgenerator")
+            if(NOT DOXY_QHG_LOCATION)
                 message(WARNING "qhelpgenerator executable was not found")
-                set(QHG_EXECUTABLE "qhelpgenerator" CACHE PATH "QHG executable" FORCE)
+                set(DOXY_QHG_LOCATION "qhelpgenerator" CACHE PATH "QHG executable" FORCE)
             endif()
         endif()
         list(APPEND DOXY_FORMATS "html" "qhp")
         set(DOXY_SEARCHENGINE "NO")
         set(DOXY_DISABLE_INDEX "YES")
         set(DOXY_GRAPHVIS "NO")
-        set(QCH_FILE \"${QCH_FILE}\")
+        set(DOXY_QCH_FILE \"${DOXY_QCH_FILE}\")
     endif()
 
     # Check if no formats are enabled
@@ -168,16 +171,15 @@ function(configure_doxy_file CONFIGURATION_FILE)
     unset(DOXY_CONF_CONTENT CACHE)
 
     # Executables
-    if(HHC_EXECUTABLE OR QHG_EXECUTABLE)
-        set(DOXY_CONF_CONTENT "${DOXY_CONF_CONTENT}# Executables:\n")
-        if(HHC_EXECUTABLE)
-            _doxy_add_option(DOXY_CONF_CONTENT HHC_LOCATION "\"${HHC_EXECUTABLE}\"")
+    foreach(EXECUTABLE HHC QHG)
+        if(DOXY_${EXECUTABLE}_LOCATION)
+            _doxy_add_option(DOXY_CONF_CONTENT ${EXECUTABLE}_LOCATION "\"${DOXY_${EXECUTABLE}_LOCATION}\"")
         endif()
-        if(QHG_EXECUTABLE)
-            _doxy_add_option(DOXY_CONF_CONTENT QHG_LOCATION "\"${HHC_EXECUTABLE}\"")
-        endif()
-        set(DOXY_CONF_CONTENT "${DOXY_CONF_CONTENT}\n")
+    endforeach()
+    if(DOXY_CONF_CONTENT)
+        set(DOXY_CONF_CONTENT "# Executables:\n${DOXY_CONF_CONTENT}\n")
     endif()
+
     # Formats
     set(DOXY_CONF_CONTENT "${DOXY_CONF_CONTENT}# Formats:\n")
     foreach(FORMAT ${DOXY_FORMATS_ALL})
