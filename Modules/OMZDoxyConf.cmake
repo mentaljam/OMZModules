@@ -254,32 +254,35 @@ function(write_sources_versions OUTPUT_FILE SOURCES)
 
     if(GIT_EXECUTABLE)
 
-        list(REMOVE_ITEM ARGN ${OUTPUT_FILE} "CMakeLists.txt")
-
-        file(WRITE ${OUTPUT_FILE} "/**\n")
-        foreach(FILE ${ARGN})
+        set(VERSIONS_CONTENT "/**\n")
+        foreach(FILE ${SOURCES})
             if(${FILE} MATCHES ".*(CMakeLists\\.txt)")
                 continue()
             endif()
             execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE}
-                            OUTPUT_VARIABLE SOURCE_DATE
-                            RESULT_VARIABLE RESULT)
+                OUTPUT_VARIABLE SOURCE_DATE
+                RESULT_VARIABLE RESULT
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
             if(${RESULT} EQUAL 0)
-                string(STRIP ${SOURCE_DATE} SOURCE_DATE)
                 execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE}
-                                OUTPUT_VARIABLE SOURCE_VERSION)
-                string(STRIP ${SOURCE_VERSION} SOURCE_VERSION)
-                file(APPEND ${OUTPUT_FILE}
-                     " *\n * @file ${FILE}\n * @version ${SOURCE_VERSION}\n * @date ${SOURCE_DATE}\n")
+                    OUTPUT_VARIABLE SOURCE_VERSION
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+                set(VERSIONS_CONTENT
+                    "${VERSIONS_CONTENT} *\n * @file ${FILE}\n * @version ${SOURCE_VERSION}\n * @date ${SOURCE_DATE}\n")
             endif()
         endforeach()
-        file(APPEND ${OUTPUT_FILE} " *\n **/\n\n")
+        set(VERSIONS_CONTENT "${VERSIONS_CONTENT} *\n **/\n\n")
+
+        unset(VERSIONS_CONTENT_OLD CACHE)
+        if(EXISTS "${OUTPUT_FILE}")
+           file(READ "${OUTPUT_FILE}" VERSIONS_CONTENT_OLD)
+        endif()
+        if(NOT "${VERSIONS_CONTENT_OLD}" STREQUAL "${VERSIONS_CONTENT}")
+           file(WRITE "${OUTPUT_FILE}" "${VERSIONS_CONTENT}")
+        endif()
 
     else()
-
         message(WARNING "Git is not found - sources versions can not be read")
-        return()
-
     endif()
 
 endfunction()
