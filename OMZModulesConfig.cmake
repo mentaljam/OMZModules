@@ -6,13 +6,15 @@ include(${CMAKE_CURRENT_LIST_DIR}/Modules/common/OMZFunctions.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/Modules/common/OMZVersion.cmake)
 
 
-#################### PAckage information ###################
+#################### Package information ###################
 
-get_version_from_git(OMZModules_VERSION OMZModules_VERSION_DATE)
-set(OMZModules_PATH "${CMAKE_CURRENT_LIST_DIR}")
+if(NOT DEFINED OMZModules_VERSION)
+    get_version_from_git(OMZModules_VERSION OMZModules_VERSION_DATE)
+    message(STATUS "Found OMZ CMake modules v${OMZModules_VERSION}")
+    set(OMZModules_PATH "${CMAKE_CURRENT_LIST_DIR}" CACHE STRING "Path to the OMZModules dir")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
-
-message(STATUS "Found OMZ CMake modules v${OMZModules_VERSION}")
 
 
 ##################### Uninstall target #####################

@@ -9,6 +9,10 @@ endif()
 
 function(get_version_from_git VERSION_ARG VERSION_DATE_ARG)
 
+    if(DEFINED ${VERSION_ARG})
+        return()
+    endif()
+
     if(NOT GIT_EXECUTABLE OR NOT EXISTS "${CMAKE_SOURCE_DIR}/.git")
         message(WARNING "Cannot get project version from git. Check GIT_EXECUTABLE variable and ${CMAKE_SOURCE_DIR}/.git directory.")
         return()
@@ -51,8 +55,8 @@ function(get_version_from_git VERSION_ARG VERSION_DATE_ARG)
         set(VERSION_DATE "unknown_date")
     endif()
 
-    set(${VERSION_ARG} ${VERSION} PARENT_SCOPE)
-    set(${VERSION_DATE_ARG} ${VERSION_DATE} PARENT_SCOPE)
+    set(${VERSION_ARG} ${VERSION} CACHE STRING "The ${VERSION_ARG} value")
+    set(${VERSION_DATE_ARG} ${VERSION_DATE} CACHE STRING "The ${VERSION_ARG} value")
 
 endfunction()
 

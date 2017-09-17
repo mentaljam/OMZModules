@@ -19,7 +19,6 @@ macro(omz_init_vars)
     elseif(CMAKE_SIZEOF_VOID_P MATCHES 8 AND
             NOT "-m32" IN_LIST CMAKE_C_FLAGS AND
             NOT "-m32" IN_LIST CMAKE_CXX_FLAGS)
-        message(STATUS "Configuring 64 bit version")
         set(TARGET_ARCHITECTURE amd64)
     else()
         message(STATUS "Configuring 32 bit version")
