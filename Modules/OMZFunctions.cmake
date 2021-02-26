@@ -16,9 +16,9 @@ endmacro()
 
 
 # Get version from git tag
-function(omz_git_version_tag VERSION_ARG VERSION_DATE_ARG)
+function(omz_git_version_tag OUTPUT)
 
-    if(DEFINED ${VERSION_ARG})
+    if(DEFINED ${OUTPUT})
         return()
     endif()
 
@@ -30,14 +30,11 @@ function(omz_git_version_tag VERSION_ARG VERSION_DATE_ARG)
         OUTPUT_VARIABLE VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+
     if(NOT RESULT EQUAL 0)
         return()
     endif()
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_LIST_DIR} log -n 1 --pretty=format:%ad --date=short
-        OUTPUT_VARIABLE VERSION_DATE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+
     if(VERSION MATCHES "v[0-9].*")
         string(REGEX REPLACE "-g[0-9,abcdef]*" "" VERSION ${VERSION})
         string(LENGTH ${VERSION} VERSION_LENGTH)
@@ -67,12 +64,31 @@ function(omz_git_version_tag VERSION_ARG VERSION_DATE_ARG)
         set(VERSION "0.0")
     endif()
 
+    set(${OUTPUT} ${VERSION} CACHE STRING "The ${OUTPUT} value")
+
+endfunction()
+
+
+# Get version date from git tag
+function(omz_git_version_tag_date OUTPUT)
+
+    if(DEFINED ${OUTPUT})
+        return()
+    endif()
+
+    __check_git_executable(TRUE)
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_LIST_DIR} log -n 1 --pretty=format:%ad --date=short
+        OUTPUT_VARIABLE VERSION_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
     if(NOT VERSION_DATE)
         set(VERSION_DATE "unknown_date")
     endif()
 
-    set(${VERSION_ARG}      ${VERSION}      CACHE STRING "The ${VERSION_ARG} value")
-    set(${VERSION_DATE_ARG} ${VERSION_DATE} CACHE STRING "The ${VERSION_ARG} value")
+    set(${OUTPUT} ${VERSION_DATE} CACHE STRING "The ${OUTPUT} value")
 
 endfunction()
 
