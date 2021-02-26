@@ -12,8 +12,10 @@ list(APPEND INSTALLED_FILES install_manifest.txt)
 foreach(FILE ${INSTALLED_FILES})
     if(EXISTS ${FILE})
         message(STATUS "Removing: ${FILE}")
-        execute_process(COMMAND "${CMAKE_COMMAND}" -E remove "${FILE}"
-                        RETURN_VALUE RESULT)
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E remove "${FILE}"
+            RETURN_VALUE RESULT
+        )
         if(NOT ${RESULT} EQUAL 0)
             message(FATAL_ERROR "Failed to remove: ${FILE}")
         endif()

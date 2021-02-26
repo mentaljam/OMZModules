@@ -1,4 +1,11 @@
-#### Add option string to Doxygen configuration
+# Include guard
+if(OMZDOXYCONF_INCLUDED)
+    return()
+endif()
+set(OMZDOXYCONF_INCLUDED 1)
+
+
+# Add option string to Doxygen configuration
 macro(_doxy_add_option VARIABLE OPTION VALUE)
 
     string(LENGTH "${OPTION}" OPTION_LENGTH)
@@ -11,8 +18,8 @@ macro(_doxy_add_option VARIABLE OPTION VALUE)
 endmacro()
 
 
-#### Configure Doxygen configuration file
-function(configure_doxy_file CONFIGURATION_FILE)
+# Configure Doxygen configuration file
+function(omz_configure_doxy_file CONFIGURATION_FILE)
 
     # Formats
     set(DOXY_FORMATS_ALL
@@ -209,8 +216,8 @@ function(configure_doxy_file CONFIGURATION_FILE)
 endfunction()
 
 
-#### Configure a QHCP file
-function(configure_qhcp_file DOXY_QHCP_FILE)
+# Configure a QHCP file
+function(omz_configure_qhcp_file DOXY_QHCP_FILE)
 
     # Check arguments
     if(NOT ARGN)
@@ -249,40 +256,36 @@ function(configure_qhcp_file DOXY_QHCP_FILE)
 endfunction()
 
 
-#### Write a file for sources versions
-function(write_sources_versions OUTPUT_FILE SOURCES)
+# Write a file for sources versions
+function(omz_write_sources_versions OUTPUT_FILE SOURCES)
 
-    if(GIT_EXECUTABLE)
+    __check_git_executable()
 
-        set(VERSIONS_CONTENT "/**\n")
-        foreach(FILE ${SOURCES})
-            if(${FILE} MATCHES ".*(CMakeLists\\.txt)")
-                continue()
-            endif()
-            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE}
-                OUTPUT_VARIABLE SOURCE_DATE
-                RESULT_VARIABLE RESULT
+    set(VERSIONS_CONTENT "/**\n")
+    foreach(FILE ${SOURCES})
+        if(${FILE} MATCHES ".*(CMakeLists\\.txt)")
+            continue()
+        endif()
+        execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%ci ${FILE}
+            OUTPUT_VARIABLE SOURCE_DATE
+            RESULT_VARIABLE RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(${RESULT} EQUAL 0)
+            execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE}
+                OUTPUT_VARIABLE SOURCE_VERSION
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
-            if(${RESULT} EQUAL 0)
-                execute_process(COMMAND ${GIT_EXECUTABLE} -C ${PROJECT_SOURCE_DIR} log -n 1 --pretty=format:%h ${FILE}
-                    OUTPUT_VARIABLE SOURCE_VERSION
-                    OUTPUT_STRIP_TRAILING_WHITESPACE)
-                set(VERSIONS_CONTENT
-                    "${VERSIONS_CONTENT} *\n * @file ${FILE}\n * @version ${SOURCE_VERSION}\n * @date ${SOURCE_DATE}\n")
-            endif()
-        endforeach()
-        set(VERSIONS_CONTENT "${VERSIONS_CONTENT} *\n **/\n\n")
-
-        unset(VERSIONS_CONTENT_OLD CACHE)
-        if(EXISTS "${OUTPUT_FILE}")
-           file(READ "${OUTPUT_FILE}" VERSIONS_CONTENT_OLD)
+            set(VERSIONS_CONTENT
+                "${VERSIONS_CONTENT} *\n * @file ${FILE}\n * @version ${SOURCE_VERSION}\n * @date ${SOURCE_DATE}\n")
         endif()
-        if(NOT "${VERSIONS_CONTENT_OLD}" STREQUAL "${VERSIONS_CONTENT}")
-           file(WRITE "${OUTPUT_FILE}" "${VERSIONS_CONTENT}")
-        endif()
+    endforeach()
+    set(VERSIONS_CONTENT "${VERSIONS_CONTENT} *\n **/\n\n")
 
-    else()
-        message(WARNING "Git is not found - sources versions can not be read")
+    unset(VERSIONS_CONTENT_OLD CACHE)
+    if(EXISTS "${OUTPUT_FILE}")
+        file(READ "${OUTPUT_FILE}" VERSIONS_CONTENT_OLD)
+    endif()
+    if(NOT "${VERSIONS_CONTENT_OLD}" STREQUAL "${VERSIONS_CONTENT}")
+        file(WRITE "${OUTPUT_FILE}" "${VERSIONS_CONTENT}")
     endif()
 
 endfunction()
