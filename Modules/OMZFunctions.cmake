@@ -348,30 +348,30 @@ endfunction()
 # Generate package name
 function(omz_generate_package_name OUTPUT)
 
-    get_property(_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
-    if(_LANGUAGES STREQUAL "NONE")
-        set(_TARGET "all")
+    if(LANGUAGES STREQUAL "NONE")
+        set(TARGET "all")
     else()
         if(MSVC)
-            string(TOLOWER "msvc${MSVC_VERSION}" _TARGET)
+            string(TOLOWER "msvc${MSVC_VERSION}" TARGET)
         else()
-            string(TOLOWER "${CMAKE_CXX_COMPILER_ID}${CMAKE_CXX_COMPILER_VERSION}" _TARGET)
+            string(TOLOWER "${CMAKE_CXX_COMPILER_ID}${CMAKE_CXX_COMPILER_VERSION}" TARGET)
         endif()
-        string(REPLACE "." "" _TARGET "_${_TARGET}")
-        set(_TARGET "${_TARGET}_${CMAKE_CXX_COMPILER_TARGET}")
+        string(REPLACE "." "" TARGET "${TARGET}")
+        set(TARGET "${TARGET}_${CMAKE_CXX_COMPILER_TARGET}")
     endif()
 
     if(CPACK_DOWNLOAD_ALL)
-        set(_POSTFIX "_online")
+        set(POSTFIX "_online")
     endif()
 
     if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(_POSTFIX "${POSTFIX}_dbg")
+        set(POSTFIX "${POSTFIX}_dbg")
     endif()
 
     string(TOLOWER
-        "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}_${_TARGET}${POSTFIX}"
+        "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}_${TARGET}${POSTFIX}"
         _OUTPUT
     )
     set(${OUTPUT} "${_OUTPUT}" PARENT_SCOPE)
