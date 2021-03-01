@@ -391,3 +391,38 @@ function(omz_add_uninstall_target)
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 endfunction()
+
+
+# Add QtIFW component translations at configure time
+function(omz_ifw_add_translation IFW_QM_FILES IFW_TS_FILES)
+    if(NOT Qt5LinguistTools_FOUND)
+        message(WARNING "Qt Linguist tools not found, IFW translations not generated")
+        return()
+    endif()
+
+    foreach(TS ${IFW_TS_FILES})
+        get_filename_component(TS_NAME ${TS} NAME_WE)
+        if(NOT TS_NAME MATCHES "^[a-z][a-z](_[A-Z][A-Z])?$")
+            message(FATAL_ERROR
+                "Invalid IFW translation file name \"${TS_NAME}\" - "
+                "must be <lang>[_COUNTRY].ts"
+            )
+        endif()
+        get_property(QT5_LRELEASE TARGET Qt5::lrelease PROPERTY IMPORTED_LOCATION)
+        get_source_file_property(OUTPUT_LOCATION ${TS} OUTPUT_LOCATION)
+        if(OUTPUT_LOCATION)
+            file(MAKE_DIRECTORY ${OUTPUT_LOCATION})
+        else()
+            set(OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR})
+        endif()
+        set(QM "${OUTPUT_LOCATION}/${TS_NAME}.qm")
+        if(${TS} IS_NEWER_THAN ${QM})
+            file(RELATIVE_PATH RELATIVE ${CMAKE_CURRENT_BINARY_DIR} ${QM})
+            message(STATUS "Compiling ${RELATIVE}")
+            execute_process(COMMAND ${QT5_LRELEASE} ${TS} -qm ${QM} -silent)
+        endif()
+        list(APPEND _IFW_QM_FILES ${QM})
+    endforeach()
+
+    set(${IFW_QM_FILES} ${_IFW_QM_FILES} PARENT_SCOPE)
+endfunction()
