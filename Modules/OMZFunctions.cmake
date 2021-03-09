@@ -17,12 +17,14 @@ endmacro()
 
 # Get version from git tag
 function(omz_git_version_tag OUTPUT)
-
-    if(DEFINED ${OUTPUT})
-        return()
-    endif()
+    set(CURRENT_FUNCTION OMZModules_${CMAKE_CURRENT_FUNCTION})
 
     __check_git_executable(TRUE)
+
+    if(NOT ARGV STREQUAL OMZModules_${CMAKE_CURRENT_FUNCTION}_ARGV)
+        set(${CURRENT_FUNCTION}_ARGV ${ARGV} CACHE INTERNAL "")
+        unset(${CURRENT_FUNCTION}_TAG CACHE)
+    endif()
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_LIST_DIR} describe --tags --always
@@ -34,6 +36,11 @@ function(omz_git_version_tag OUTPUT)
     if(NOT RESULT EQUAL 0)
         return()
     endif()
+
+    if(VERSION STREQUAL ${CURRENT_FUNCTION}_TAG)
+        return()
+    endif()
+    set(${CURRENT_FUNCTION}_TAG ${VERSION} CACHE INTERNAL "")
 
     if(VERSION MATCHES "v[0-9].*")
         string(REGEX REPLACE "-g[0-9,abcdef]*" "" VERSION ${VERSION})
@@ -56,7 +63,7 @@ function(omz_git_version_tag OUTPUT)
             string(REPLACE ";" "." VERSION "${VERSION}")
         endif()
     else()
-        message(WARNING "Unknown git tag format '${VERSION}', expected something like 'v1.0-10'")
+        message(WARNING "Unknown Git tag format '${VERSION}', expected something like 'v1.0-10'")
         unset(VERSION)
     endif()
 
@@ -64,19 +71,11 @@ function(omz_git_version_tag OUTPUT)
         set(VERSION "0.0")
     endif()
 
-    set(${OUTPUT} ${VERSION} CACHE STRING "The ${OUTPUT} value")
+    set(${OUTPUT} ${VERSION} CACHE STRING "The last Git tag version" FORCE)
 
-endfunction()
-
-
-# Get version date from git tag
-function(omz_git_version_tag_date OUTPUT)
-
-    if(DEFINED ${OUTPUT})
+    if(NOT DEFINED ARGV1)
         return()
     endif()
-
-    __check_git_executable(TRUE)
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_LIST_DIR} log -n 1 --pretty=format:%ad --date=short
@@ -88,7 +87,7 @@ function(omz_git_version_tag_date OUTPUT)
         set(VERSION_DATE "unknown_date")
     endif()
 
-    set(${OUTPUT} ${VERSION_DATE} CACHE STRING "The ${OUTPUT} value")
+    set(${ARGV1} ${VERSION_DATE} CACHE STRING "The last Git tag date" FORCE)
 
 endfunction()
 
