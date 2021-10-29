@@ -140,8 +140,16 @@ function(omz_target_architecture OUTPUT)
             message(FATAL_ERROR "Failed to determine the MSVC target architecture: ${MSVC_C_ARCHITECTURE_ID}")
         endif()
     else()
+        if(CMAKE_C_COMPILER)
+            set(C_COMPILER ${CMAKE_C_COMPILER})
+        else()
+            set(C_COMPILER $ENV{CC})
+        endif()
+        if(NOT C_COMPILER)
+            message(FATAL_ERROR "Cannot determine target architecture triplet, set the C compiler manually")
+        endif()
         execute_process(
-            COMMAND ${CMAKE_C_COMPILER} -dumpmachine
+            COMMAND ${C_COMPILER} -dumpmachine
             RESULT_VARIABLE _RESULT
             OUTPUT_VARIABLE _ARCH
             ERROR_QUIET
